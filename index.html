@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WestyLoot</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        :root { --bg:#0d0f17; --card:#171a29; --card-light:#20253b; --accent:#f59e0b; --star:#38bdf8; --text:#fff; --muted:#8b92a8; --green:#10b981; --red:#ef4444; --purple:#a855f7; }
+        * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; user-select:none; }
+        body { background:var(--bg); color:var(--text); padding:12px; padding-bottom:86px; min-height:100vh; }
+        body::before { content:""; position:fixed; inset:0; pointer-events:none; z-index:9999; box-shadow:inset 0 0 65px rgba(139,92,246,0.24), inset 0 0 130px rgba(88,28,135,0.18); }
+
+        .live-bar { display:flex; align-items:center; gap:8px; background:#121522; padding:7px 10px; border-radius:12px; margin-bottom:10px; border:1px solid rgba(167,139,250,0.25); overflow:hidden; }
+        .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); flex-shrink:0; animation:pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
+        .live-feed { display:flex; gap:6px; overflow:hidden; white-space:nowrap; font-size:11px; }
+        .live-chip { background:#1d2236; padding:4px 8px; border-radius:8px; border-left:3px solid var(--accent); display:inline-flex; align-items:center; gap:5px; animation:slideIn 0.35s ease; }
+        .live-chip.rare { border-left-color:var(--red); background:linear-gradient(90deg,#2e141a,#1d2236); }
+        @keyframes slideIn { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
+
+        .header { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; background:var(--card); padding:10px 12px; border-radius:16px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 18px rgba(139,92,246,0.10); }
+        .stat { display:flex; flex-direction:column; align-items:center; }
+        .stat-label { font-size:10px; color:var(--muted); text-transform:uppercase; }
+        .stat-val { font-size:16px; font-weight:800; color:var(--accent); margin-top:2px; }
+        .stat-val.stars { color:var(--star); }
+        .card { background:var(--card); border-radius:18px; padding:15px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 18px rgba(139,92,246,0.10); }
+        .card-title { font-size:15px; font-weight:800; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+        .badge { font-size:11px; padding:3px 8px; border-radius:8px; background:rgba(245,158,11,0.15); color:var(--accent); font-weight:700; }
+        .badge.star { background:rgba(56,189,248,0.15); color:var(--star); }
+        .badge.purple { background:rgba(168,85,247,0.18); color:#d8b4fe; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+        .roulette-wrap { position:relative; height:88px; background:#08090e; border-radius:12px; overflow:hidden; margin-bottom:12px; border:1px solid rgba(167,139,250,0.40); box-shadow:0 0 24px rgba(139,92,246,0.18), inset 0 0 18px rgba(139,92,246,0.12); }
+        .roulette-line { position:absolute; left:50%; top:0; bottom:0; width:3px; background:var(--accent); z-index:10; transform:translateX(-50%); box-shadow:0 0 12px var(--accent); }
+        .roulette-track { display:flex; height:100%; align-items:center; }
+        .r-item { min-width:86px; height:72px; margin:0 4px; background:#1c2033; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; text-align:center; padding:4px; border-bottom:3px solid #3b82f6; }
+        .r-item.gold { border-bottom-color:var(--accent); background:linear-gradient(180deg,#2e240d,#1c2033); color:var(--accent); }
+        .r-item.red { border-bottom-color:var(--red); background:linear-gradient(180deg,#331418,#1c2033); color:#fca5a5; }
+
+        .btn { width:100%; padding:13px; border:none; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; color:#000; background:var(--accent); }
+        .btn:active { transform:scale(0.97); }
+        .btn-green { background:var(--green); color:#fff; margin-top:8px; }
+        .btn-star { background:var(--star); color:#051926; margin-top:8px; }
+        .btn-purple { background:var(--purple); color:#fff; margin-top:8px; }
+        .btn-dark { background:var(--card-light); color:#fff; margin-top:8px; }
+        .btn-sm { padding:8px 12px; font-size:12px; width:auto; }
+        .click-area { text-align:center; padding:8px 0 12px; }
+        .coin-btn { width:124px; height:124px; border-radius:50%; background:radial-gradient(circle,#fbbf24,#d97706); border:6px solid #78350f; font-size:44px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 0 32px rgba(139,92,246,0.35), 0 0 18px rgba(245,158,11,0.45); }
+        .coin-btn:active { transform:scale(0.91); }
+
+        .shop-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .shop-item { background:var(--card-light); border-radius:14px; padding:12px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; }
+        .shop-item-icon { font-size:28px; margin-bottom:6px; }
+        .shop-item-name { font-size:13px; font-weight:700; margin-bottom:4px; }
+        .shop-item-sub { font-size:11px; color:var(--muted); margin-bottom:10px; }
+        .prog-bg { width:100%; height:9px; background:#08090e; border-radius:99px; overflow:hidden; margin:6px 0 12px; }
+        .prog-fill { height:100%; background:var(--green); width:0%; transition:width 0.3s; }
+        .input-row { display:flex; gap:8px; }
+        .text-input { flex:1; background:#08090e; border:1px solid #282d44; border-radius:10px; padding:11px; color:#fff; font-size:13px; font-weight:600; }
+        .inv-item { display:flex; justify-content:space-between; align-items:center; background:var(--card-light); padding:12px; border-radius:12px; margin-bottom:8px; border-left:4px solid var(--accent); }
+        .inv-actions { display:flex; gap:6px; }
+
+        .wheel-container { position:relative; width:220px; height:220px; margin:10px auto 16px; }
+        .wheel-pointer { position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:12px solid transparent; border-right:12px solid transparent; border-top:22px solid var(--red); z-index:15; }
+        .wheel-disc { width:100%; height:100%; border-radius:50%; border:6px solid #282d44; position:relative; overflow:hidden; transition:transform 4s cubic-bezier(0.15,0.85,0.25,1); background:conic-gradient(#1e293b 0deg 60deg,#2563eb 60deg 120deg,#1e293b 120deg 180deg,#10b981 180deg 240deg,#1e293b 240deg 300deg,#f59e0b 300deg 360deg); }
+        .wheel-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:44px; height:44px; border-radius:50%; background:#0d0f17; border:3px solid var(--accent); display:flex; align-items:center; justify-content:center; font-size:18px; z-index:10; }
+        .w-label { position:absolute; top:18px; left:50%; transform-origin:0 92px; font-size:11px; font-weight:800; color:#fff; }
+        .bp-track { display:flex; gap:10px; overflow-x:auto; padding:8px 4px 14px; }
+        .bp-col { min-width:96px; display:flex; flex-direction:column; gap:6px; }
+        .bp-lvl-badge { text-align:center; font-size:11px; font-weight:800; background:#08090e; padding:4px; border-radius:8px; color:var(--muted); border:1px solid #282d44; }
+        .bp-lvl-badge.unlocked { background:var(--accent); color:#000; border-color:var(--accent); }
+        .bp-slot { background:#1c2033; border-radius:12px; padding:10px 6px; text-align:center; border:1px solid rgba(255,255,255,0.06); }
+        .bp-slot.prem { background:linear-gradient(180deg,#2b210a,#1c2033); border-color:rgba(245,158,11,0.35); }
+        .bp-slot-tag { font-size:9px; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+        .bp-slot.prem .bp-slot-tag { color:var(--accent); }
+        .bp-slot-icon { font-size:22px; margin-bottom:4px; }
+        .bp-slot-name { font-size:11px; font-weight:700; min-height:28px; display:flex; align-items:center; justify-content:center; }
+        .bp-claim-btn { margin-top:6px; width:100%; padding:5px; font-size:10px; font-weight:800; border:none; border-radius:6px; background:var(--green); color:#fff; cursor:pointer; }
+        .bp-claim-btn:disabled { background:#262b40; color:var(--muted); cursor:default; }
+
+        .nav { position:fixed; bottom:0; left:0; right:0; background:#131624; border-top:1px solid rgba(167,139,250,0.28); box-shadow:0 -8px 30px rgba(139,92,246,0.16); display:grid; grid-template-columns:repeat(4,1fr); padding:8px 4px 12px; z-index:50; }
+        .nav-btn { background:none; border:none; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:700; cursor:pointer; }
+        .nav-btn.active { color:var(--accent); }
+        .nav-icon { font-size:20px; }
+        .toast { position:fixed; top:14px; left:50%; transform:translateX(-50%); background:#1e293b; color:#fff; padding:10px 18px; border-radius:12px; font-size:13px; font-weight:700; border:1px solid var(--accent); z-index:100; display:none; text-align:center; }
+    </style>
+</head>
+<body>
+    <div id="toast" class="toast"></div>
+    <div class="live-bar"><div class="live-dot"></div><div class="live-feed" id="liveFeed"></div></div>
+    <div class="header">
+        <div class="stat"><span class="stat-label">Монеты</span><span class="stat-val" id="coins">0</span></div>
+        <div class="stat"><span class="stat-label">Ключи</span><span class="stat-val" id="keys">50</span></div>
+        <div class="stat"><span class="stat-label">Тест Stars</span><span class="stat-val stars" id="stars">500 ⭐</span></div>
+    </div>
+    <div id="tab-home" class="tab-content active">
+        <div class="card">
+            <div class="card-title"><span>⚡ Кликер монет</span><span class="badge">8 500 = 1 🔑</span></div>
+            <div class="click-area"><div class="coin-btn" onclick="tapCoin()">🪙</div></div>
+            <button class="btn btn-dark" onclick="exchangeKey()">Обменять 8 500 монет на 1 🔑</button>
+            <button class="btn btn-green" onclick="watchAd()">🎬 Смотреть рекламу (+1–2 🔑)</button>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>👥 Пригласи друзей</span><span class="badge purple" id="refCount">0 друзей</span></div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Получай <b style="color:#fff;">+5 🔑</b> за каждого друга, который посмотрит 5 реклам, и <b style="color:var(--star);">10%</b> от его покупок!</p>
+            <div class="input-row">
+                <input type="text" id="refLinkInput" class="text-input" readonly value="https://t.me">
+                <button class="btn btn-purple btn-sm" style="margin:0;" onclick="copyRefLink()">Копия</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🎁 Розыгрыши Telegram Stars</span></div>
+            <div style="font-size:12px;color:var(--muted);">Недельный (100 ⭐): <b id="adsWeek" style="color:#fff">0</b> / 50 реклам</div>
+            <div class="prog-bg"><div class="prog-fill" id="barWeek"></div></div>
+            <div style="font-size:12px;color:var(--muted);">Месячный (1 000 ⭐): <b id="adsMonth" style="color:#fff">0</b> / 250 реклам</div>
+            <div class="prog-bg"><div class="prog-fill" id="barMonth" style="background:var(--accent);"></div></div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🎟 Промокод</span></div>
+            <div class="input-row">
+                <input type="text" id="promoCode" class="text-input" style="text-transform:uppercase;" placeholder="Введите промокод">
+                <button class="btn btn-sm" onclick="usePromo()">ОК</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-shop" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span id="activeCaseTitle">📦 Обычный кейс CS2</span><span class="badge" id="activeCasePrice">50 🔑</span></div>
+            <div class="roulette-wrap"><div class="roulette-line"></div><div class="roulette-track" id="track"></div></div>
+            <button class="btn" onclick="spinSelectedCase()">Крутить кейс</button>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>💎 Выбор кейса</span></div>
+            <div class="shop-grid">
+                <div class="shop-item"><div><div class="shop-item-icon">📦</div><div class="shop-item-name">Обычный CS2</div><div class="shop-item-sub">Ключи или AK-47 ($3)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('standard')">50 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Стартовый</div><div class="shop-item-sub">Скины $0.20 – $5.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_start')">50 ⭐</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🔥</div><div class="shop-item-name">Элитный</div><div class="shop-item-sub">Скины $0.60 – $15.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_elite')">150 ⭐</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🗡️</div><div class="shop-item-name">Тайный / Нож</div><div class="shop-item-sub">Скины до $100.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_knife')">500 ⭐</button></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🔑 Купить ключи за Stars</span></div>
+            <div class="shop-grid">
+                <div class="shop-item"><div class="shop-item-name">10 ключей</div><div class="shop-item-sub">Базовый набор</div><button class="btn btn-star btn-sm" style="width:100%" onclick="buyKeysPack(10, 15)">15 ⭐</button></div>
+                <div class="shop-item"><div class="shop-item-name">55 ключей</div><div class="shop-item-sub">+5 в подарок</div><button class="btn btn-star btn-sm" style="width:100%" onclick="buyKeysPack(55, 75)">75 ⭐</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-bp" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span>🎡 Колесо Фортуны</span><span class="badge">1 раз в 24ч</span></div>
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-disc" id="wheelDisc">
+                    <div class="w-label" style="transform: rotate(30deg) translateX(-50%);">5 🔑</div>
+                    <div class="w-label" style="transform: rotate(90deg) translateX(-50%);">10 🔑</div>
+                    <div class="w-label" style="transform: rotate(150deg) translateX(-50%);">5 🔑</div>
+                    <div class="w-label" style="transform: rotate(210deg) translateX(-50%);">25 🔑</div>
+                    <div class="w-label" style="transform: rotate(270deg) translateX(-50%);">15 🔑</div>
+                    <div class="w-label" style="transform: rotate(330deg) translateX(-50%); color:#fde047;">СКИН $5</div>
+                </div>
+                <div class="wheel-center">🎯</div>
+            </div>
+            <button class="btn btn-green" id="dailyBtn" onclick="spinDailyWheel()">🎬 Крутить за 1 рекламу</button>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🏆 Season 1: Westy Pass</span><span class="badge star" id="bpStatus">FREE</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;">
+                <span>Уровень: <b id="bpLvl" style="color:var(--accent)">1</b> / 100</span>
+                <span>Кейсы: <b id="bpCases" style="color:#fff">0</b>/200 | Реклама: <b id="bpAds" style="color:#fff">0</b>/50</span>
+            </div>
+            <div class="prog-bg"><div class="prog-fill" id="barBpCases"></div></div>
+            <div class="bp-track" id="bpTrack"></div>
+            <button class="btn btn-star" style="margin-top:10px;" id="buyBpBtn" onclick="buyPremiumBP()">👑 Разблокировать GOLD PASS (350 ⭐)</button>
+        </div>
+    </div>
+
+    <div id="tab-inv" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span>🔗 Твоя Steam Trade URL</span></div>
+            <div class="input-row">
+                <input type="text" id="tradeUrl" class="text-input" placeholder="https://steamcommunity.com...">
+                <button class="btn btn-sm" onclick="saveTradeUrl()">Сохранить</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🎒 Выбитые скины</span><span class="badge" id="invCount">0 шт.</span></div>
+            <div id="invList"><p style="font-size:13px;color:var(--muted);text-align:center;padding:16px 0;">Пока пусто. Открывай кейсы в Магазине!</p></div>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <button class="nav-btn active" onclick="switchTab('home', this)"><span class="nav-icon">🏠</span><span>Главная</span></button>
+        <button class="nav-btn" onclick="switchTab('shop', this)"><span class="nav-icon">🛒</span><span>Магазин</span></button>
+        <button class="nav-btn" onclick="switchTab('bp', this)"><span class="nav-icon">🏆</span><span>БП и Колесо</span></button>
+        <button class="nav-btn" onclick="switchTab('inv', this)"><span class="nav-icon">🎒</span><span>Инвентарь</span></button>
+    </nav>
+
+    <script src="app.js"></script>
+</body>
+</html>
