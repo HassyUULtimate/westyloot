@@ -8,6 +8,11 @@ let state = {
     referrals: 0, inventory: [], claimedBp: []
 };
 
+const savedData = localStorage.getItem('westyloot_save');
+if (savedData) {
+    try { state = { ...state, ...JSON.parse(savedData) }; } catch (e) {}
+}
+
 let currentCase = 'standard';
 let isSpinning = false;
 let wheelDeg = 0;
@@ -433,3 +438,10 @@ function usePromo() {
 initLiveFeed();
 buildTrack('12 🔑');
 updateUI();
+window.addEventListener('beforeunload', () => {
+    localStorage.setItem('westyloot_save', JSON.stringify(state));
+});
+setInterval(() => {
+    localStorage.setItem('westyloot_save', JSON.stringify(state));
+}, 1000);
+
