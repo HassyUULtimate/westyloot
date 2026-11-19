@@ -213,7 +213,7 @@ function selectCase(caseKey, silent = false) {
     const cfg = CASES_CONFIG[caseKey];
     document.getElementById('activeCaseTitle').innerText = cfg.title;
     document.getElementById('activeCasePrice').innerText = cfg.costText;
-    buildTrack(cfg.items.label);
+    buildTrack('5 🔑');
 
     const grid = document.getElementById('caseContents');
     if (grid) {
