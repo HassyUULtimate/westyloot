@@ -1,29 +1,77 @@
 const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 if (tg) tg.expand();
 
+const ADSGRAM_BLOCK_ID = "";
+const BOT_USERNAME = "westyloot_bot";
+const ADMIN_CHAT_ID = "5888218785";
+
 let state = {
     coins: 0, keys: 0, stars: 0,
     adsWeek: 0, adsMonth: 0, casesOpened: 0,
     bpPremium: false, dailyUsed: false,
-    referrals: 0, inventory: [], claimedBp: []
+    referrals: 0, refClaimed: false,
+    usedPromos: [], inventory: [], claimedBp: []
 };
 
-const savedData = localStorage.getItem('westyloot_save');
-if (savedData) {
-    try { state = { ...state, ...JSON.parse(savedData) }; } catch (e) {}
-}
-
-let currentCase = 'standard';
+let currentCase = 'free_25';
 let isSpinning = false;
 let wheelDeg = 0;
+let lastWonSkin = null;
 
-const CASES_CONFIG = {
-    standard: { title: '📦 Обычный кейс CS2', costText: '50 🔑', currency: 'keys', cost: 50, pool: ['12 🔑', '38 🔑', '63 🔑', '100 🔑', 'AK-47 | Slate ($3)'] },
-    donate_start: { title: '💠 Кейс «Стартовый»', costText: '50 ⭐', currency: 'stars', cost: 50, pool: ['P250 | Sand Dune ($0.20)', 'Glock-18 | Oxide ($0.45)', 'M4A4 | Magnesium ($1.50)', 'USP-S | Cortex ($5.00)'] },
-    donate_elite: { title: '🔥 Кейс «Элитный»', costText: '150 ⭐', currency: 'stars', cost: 150, pool: ['AWP | Atheris ($0.65)', 'AK-47 | Ice Coaled ($1.70)', 'M4A1-S | Decimator ($4.00)', 'Desert Eagle | Printstream ($15.00)'] },
-    donate_knife: { title: '🗡️ Кейс «Тайный / Нож»', costText: '500 ⭐', currency: 'stars', cost: 500, pool: ['AK-47 | Redline ($1.80)', 'AWP | Neo-Noir ($5.00)', 'M4A1-S | Hyper Beast ($12.00)', 'AWP | Asiimov ($35.00)', '★ Нож-бабочка ($100.00)'] }
+const FREE_CASES = {
+    free_25:  { title: '📦 Кейс «Новичок»', cost: 25,  keys:,     skin: { name: 'P250 | Sand Dune', price: 0.25, sellKeys: 6 },   chance: 0.3 },
+    free_50:  { title: '🎒 Кейс «Базовый»', cost: 50,  keys:,   skin: { name: 'Glock-18 | Oxide', price: 0.50, sellKeys: 12 },  chance: 0.5 },
+    free_75:  { title: '🎖️ Кейс «Армейский»', cost: 75, keys:,  skin: { name: 'USP-S | Ticket to Hell', price: 1.00, sellKeys: 24 }, chance: 0.6 },
+    free_100: { title: '🔫 Кейс «Запрещённый»', cost: 100, keys:, skin: { name: 'AK-47 | Slate', price: 2.50, sellKeys: 55 },   chance: 0.7 },
+    free_150: { title: '🔮 Кейс «Засекреченный»', cost: 150, keys:, skin: { name: 'M4A1-S | Decimator', price: 4.00, sellKeys: 90 }, chance: 0.8 },
+    free_200: { title: '🔥 Кейс «Тайный»', cost: 200, keys:, skin: { name: 'AWP | Neo-Noir', price: 6.00, sellKeys: 130 },   chance: 0.9 },
+    free_300: { title: '👑 Кейс «Легендарный»', cost: 300, keys:, skin: { name: 'Deagle | Printstream', price: 15.00, sellKeys: 320 }, chance: 1.0 }
 };
 
+const CASES_CONFIG = {
+    donate_start: {
+        title: '💠 Кейс «Стартовый»', costText: '50 ⭐', currency: 'stars', cost: 50,
+        items: [
+            { label: 'P250 | Sand Dune ($0.20)', chance: '70%', tier: '' },
+            { label: 'Glock-18 | Oxide ($0.45)', chance: '25%', tier: '' },
+            { label: 'M4A4 | Magnesium ($1.50)', chance: '4.5%', tier: 'gold' },
+            { label: 'USP-S | Cortex ($5.00)', chance: '0.5%', tier: 'red' }
+        ]
+    },
+    donate_elite: {
+        title: '⚡ Кейс «Элитный»', costText: '150 ⭐', currency: 'stars', cost: 150,
+        items: [
+            { label: 'AWP | Atheris ($0.65)', chance: '65%', tier: '' },
+            { label: 'AK-47 | Ice Coaled ($1.70)', chance: '28%', tier: 'gold' },
+            { label: 'M4A1-S | Decimator ($4.00)', chance: '6%', tier: 'gold' },
+            { label: 'Deagle | Printstream ($15.00)', chance: '1%', tier: 'red' }
+        ]
+    },
+    donate_knife: {
+        title: '🗡️ Кейс «Ножевой»', costText: '500 ⭐', currency: 'stars', cost: 500,
+        items: [
+            { label: 'AK-47 | Redline ($1.80)', chance: '70%', tier: '' },
+            { label: 'AWP | Neo-Noir ($5.00)', chance: '22%', tier: 'gold' },
+            { label: 'M4A1-S | Hyper Beast ($12)', chance: '7%', tier: 'red' },
+            { label: 'AWP | Asiimov ($35.00)', chance: '0.9%', tier: 'red' },
+            { label: '★ Нож-бабочка ($100.00)', chance: '0.1%', tier: 'red' }
+        ]
+    }
+};
+
+Object.keys(FREE_CASES).forEach(k => {
+    const fc = FREE_CASES[k];
+    CASES_CONFIG[k] = {
+        title: fc.title, costText: fc.cost + ' 🔑', currency: 'keys', cost: fc.cost,
+        items: [
+            { label: fc.keys[0] + ' 🔑', chance: '50%', tier: '' },
+            { label: fc.keys[1] + ' 🔑', chance: '35%', tier: '' },
+            { label: fc.keys[2] + ' 🔑', chance: '10%', tier: 'gold' },
+            { label: fc.keys[3] + ' 🔑', chance: (5 - fc.chance).toFixed(1) + '%', tier: 'gold' },
+            { label: `${fc.skin.name} ($${fc.skin.price})`, chance: fc.chance + '%', tier: 'red' }
+        ]
+    };
+});
 function showToast(msg) {
     const t = document.getElementById('toast');
     t.innerText = msg;
@@ -31,13 +79,41 @@ function showToast(msg) {
     setTimeout(() => { t.style.display = 'none'; }, 2600);
 }
 
+function runRewardedAd(onComplete) {
+    if (ADSGRAM_BLOCK_ID && window.Adsgram) {
+        const AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+        AdController.show().then(() => { onComplete(); }).catch(() => {
+            showToast('Досмотри рекламу до конца, чтобы получить награду!');
+        });
+    } else {
+        onComplete();
+    }
+}
+
+function initReferrals() {
+    const uid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : '777';
+    const inp = document.getElementById('refLinkInput');
+    if (inp) inp.value = `https://t.me{BOT_USERNAME}?start=ref_${uid}`;
+
+    const startParam = (tg && tg.initDataUnsafe) ? tg.initDataUnsafe.start_param : '';
+    if (startParam && startParam.startsWith('ref_') && !state.refClaimed) {
+        state.refClaimed = true;
+        state.keys += 3;
+        showToast('🎁 Бонус по ссылке друга: +3 🔑!');
+    }
+}
+
+function copyRefLink() {
+    const input = document.getElementById('refLinkInput');
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    showToast('Реферальная ссылка скопирована!');
+}
+
 function pushLiveDrop(user, item, rarity = 'pink') {
     const feed = document.getElementById('liveFeed');
     if (!feed) return;
-    if (feed.dataset.empty === '1') {
-        feed.innerHTML = '';
-        feed.dataset.empty = '0';
-    }
+    if (feed.dataset.empty === '1') { feed.innerHTML = ''; feed.dataset.empty = '0'; }
     const chip = document.createElement('div');
     const rClass = rarity === true ? 'rare' : (rarity || '');
     chip.className = 'live-chip ' + rClass;
@@ -54,19 +130,12 @@ function initLiveFeed() {
     feed.innerHTML = '<span style="font-size:11px;color:var(--muted);">🔴 Прямой эфир: здесь появятся реальные скины игроков</span>';
 }
 
-function copyRefLink() {
-    const input = document.getElementById('refLinkInput');
-    input.select();
-    navigator.clipboard.writeText(input.value);
-    showToast('Реферальная ссылка скопирована!');
-}
-
 function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabId).classList.add('active');
     btn.classList.add('active');
-    if (tabId === 'shop') buildTrack(CASES_CONFIG[currentCase].pool);
+    if (tabId === 'shop') selectCase(currentCase, true);
     if (tabId === 'bp') renderBattlePass();
 }
 
@@ -110,21 +179,33 @@ function exchangeKey() {
 }
 
 function watchAd() {
-    const won = Math.random() < 0.35 ? 2 : 1;
-    state.keys += won;
-    state.adsWeek += 1;
-    state.adsMonth += 1;
-    showToast('Реклама просмотрена! +' + won + ' 🔑');
-    updateUI();
+    runRewardedAd(() => {
+        const won = Math.random() < 0.35 ? 2 : 1;
+        state.keys += won;
+        state.adsWeek += 1;
+        state.adsMonth += 1;
+        showToast('Реклама просмотрена! +' + won + ' 🔑');
+        updateUI();
+    });
 }
-function selectCase(caseKey) {
+function selectCase(caseKey, silent = false) {
     if (isSpinning) return;
     currentCase = caseKey;
     const cfg = CASES_CONFIG[caseKey];
     document.getElementById('activeCaseTitle').innerText = cfg.title;
     document.getElementById('activeCasePrice').innerText = cfg.costText;
-    buildTrack(cfg.pool);
-    showToast('Выбран: ' + cfg.title);
+    buildTrack(cfg.items[0].label);
+
+    const grid = document.getElementById('caseContents');
+    if (grid) {
+        grid.innerHTML = cfg.items.map(it => `
+            <div class="c-chip ${it.tier}">
+                <div class="c-name">${it.label}</div>
+                <div class="c-chance">${it.chance}</div>
+            </div>
+        `).join('');
+    }
+    if (!silent) showToast('Выбран: ' + cfg.title);
 }
 
 function buildTrack(winText) {
@@ -133,11 +214,11 @@ function buildTrack(winText) {
     track.style.transform = 'translateX(0px)';
     track.innerHTML = '';
 
-    const pool = CASES_CONFIG[currentCase].pool;
+    const pool = CASES_CONFIG[currentCase].items.map(i => i.label);
     for (let i = 0; i < 35; i++) {
         const div = document.createElement('div');
         let label = (i === 28) ? winText : pool[Math.floor(Math.random() * pool.length)];
-        let isRare = label.includes('$5') || label.includes('$15') || label.includes('$35') || label.includes('$100');
+        let isRare = label.includes('$5') || label.includes('$6') || label.includes('$15') || label.includes('$35') || label.includes('$100');
         let isSkin = label.includes('$');
         div.className = 'r-item' + (isRare ? ' red' : (isSkin ? ' gold' : ''));
         div.innerText = label;
@@ -145,7 +226,30 @@ function buildTrack(winText) {
     }
 }
 
-function spinSelectedCase() {
+function openWinModal(skinObj) {
+    lastWonSkin = skinObj;
+    document.getElementById('modalIcon').innerText = skinObj.name.includes('Нож') ? '🗡️' : '🔫';
+    document.getElementById('modalTitle').innerText = skinObj.name;
+    document.getElementById('modalPrice').innerText = '$' + skinObj.price.toFixed(2);
+    document.getElementById('modalSellBtn').innerText = `💰 Продать за +${skinObj.sellKeys} 🔑`;
+    document.getElementById('winModal').style.display = 'flex';
+}
+
+function closeWinModal(sellImmediately) {
+    document.getElementById('winModal').style.display = 'none';
+    if (!lastWonSkin) return;
+    if (sellImmediately) {
+        state.keys += lastWonSkin.sellKeys;
+        showToast(`Продано за +${lastWonSkin.sellKeys} 🔑!`);
+    } else {
+        state.inventory.push(lastWonSkin);
+        showToast('Скин добавлен в инвентарь!');
+    }
+    lastWonSkin = null;
+    updateUI();
+}
+
+function spinSelectedCase(isFast = false) {
     if (isSpinning) return;
     const cfg = CASES_CONFIG[currentCase];
 
@@ -166,12 +270,13 @@ function spinSelectedCase() {
     let winKeys = 0;
     let skinObj = null;
 
-    if (currentCase === 'standard') {
-        if (roll < 50) { winKeys = 12; winText = '12 🔑'; }
-        else if (roll < 85) { winKeys = 38; winText = '38 🔑'; }
-        else if (roll < 95) { winKeys = 63; winText = '63 🔑'; }
-        else if (roll < 99.5) { winKeys = 100; winText = '100 🔑'; }
-        else { winText = 'AK-47 | Slate ($3)'; skinObj = { name: 'AK-47 | Slate', price: 3.0, sellKeys: 60 }; }
+    if (FREE_CASES[currentCase]) {
+        const fc = FREE_CASES[currentCase];
+        if (roll < 50) { winKeys = fc.keys[0]; winText = winKeys + ' 🔑'; }
+        else if (roll < 85) { winKeys = fc.keys[1]; winText = winKeys + ' 🔑'; }
+        else if (roll < 95) { winKeys = fc.keys[2]; winText = winKeys + ' 🔑'; }
+        else if (roll < (100 - fc.chance)) { winKeys = fc.keys[3]; winText = winKeys + ' 🔑'; }
+        else { winText = `${fc.skin.name} ($${fc.skin.price})`; skinObj = { ...fc.skin }; }
     } else if (currentCase === 'donate_start') {
         if (roll < 70) { winText = 'P250 | Sand Dune ($0.20)'; skinObj = { name: 'P250 | Sand Dune', price: 0.20, sellKeys: 5 }; }
         else if (roll < 95) { winText = 'Glock-18 | Oxide ($0.45)'; skinObj = { name: 'Glock-18 | Oxide', price: 0.45, sellKeys: 12 }; }
@@ -181,11 +286,11 @@ function spinSelectedCase() {
         if (roll < 65) { winText = 'AWP | Atheris ($0.65)'; skinObj = { name: 'AWP | Atheris', price: 0.65, sellKeys: 16 }; }
         else if (roll < 93) { winText = 'AK-47 | Ice Coaled ($1.70)'; skinObj = { name: 'AK-47 | Ice Coaled', price: 1.70, sellKeys: 40 }; }
         else if (roll < 99) { winText = 'M4A1-S | Decimator ($4.00)'; skinObj = { name: 'M4A1-S | Decimator', price: 4.00, sellKeys: 90 }; }
-        else { winText = 'Desert Eagle | Printstream ($15.00)'; skinObj = { name: 'Desert Eagle | Printstream', price: 15.00, sellKeys: 320 }; }
+        else { winText = 'Deagle | Printstream ($15.00)'; skinObj = { name: 'Deagle | Printstream', price: 15.00, sellKeys: 320 }; }
     } else if (currentCase === 'donate_knife') {
         if (roll < 70) { winText = 'AK-47 | Redline ($1.80)'; skinObj = { name: 'AK-47 | Redline', price: 1.80, sellKeys: 42 }; }
         else if (roll < 92) { winText = 'AWP | Neo-Noir ($5.00)'; skinObj = { name: 'AWP | Neo-Noir', price: 5.00, sellKeys: 110 }; }
-        else if (roll < 99) { winText = 'M4A1-S | Hyper Beast ($12.00)'; skinObj = { name: 'M4A1-S | Hyper Beast', price: 12.00, sellKeys: 260 }; }
+        else if (roll < 99) { winText = 'M4A1-S | Hyper Beast ($12)'; skinObj = { name: 'M4A1-S | Hyper Beast', price: 12.00, sellKeys: 260 }; }
         else if (roll < 99.9) { winText = 'AWP | Asiimov ($35.00)'; skinObj = { name: 'AWP | Asiimov', price: 35.00, sellKeys: 750 }; }
         else { winText = '★ Нож-бабочка ($100.00)'; skinObj = { name: '★ Нож-бабочка', price: 100.00, sellKeys: 2000 }; }
     }
@@ -195,25 +300,25 @@ function spinSelectedCase() {
     const wrapWidth = track.parentElement.offsetWidth;
     const itemWidth = 94;
     const targetOffset = (28 * itemWidth) + (itemWidth / 2) - (wrapWidth / 2);
+    const duration = isFast ? 350 : 3500;
 
     setTimeout(() => {
-        track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.85, 0.25, 1)';
+        track.style.transition = `transform ${duration}ms cubic-bezier(0.15, 0.85, 0.25, 1)`;
         track.style.transform = `translateX(-${targetOffset}px)`;
-    }, 50);
+    }, 30);
 
     setTimeout(() => {
         isSpinning = false;
         if (skinObj) {
-            state.inventory.push(skinObj);
             const rType = skinObj.price >= 50 ? 'gold' : (skinObj.price >= 5 ? 'rare' : 'pink');
             pushLiveDrop('@Вы', skinObj.name, rType);
-            showToast('Выпал скин: ' + skinObj.name + '!');
+            openWinModal(skinObj);
         } else {
             state.keys += winKeys;
             showToast('Выпало: ' + winKeys + ' 🔑');
+            updateUI();
         }
-        updateUI();
-    }, 3600);
+    }, duration + 120);
 }
 
 function buyKeysPack(keysAdd, starsCost) {
@@ -225,61 +330,46 @@ function buyKeysPack(keysAdd, starsCost) {
 }
 function spinDailyWheel() {
     if (state.dailyUsed) return showToast('Ты уже крутил колесо сегодня! Приходи через 24ч');
-    state.dailyUsed = true;
-    state.adsWeek += 1;
-    state.adsMonth += 1;
+    runRewardedAd(() => {
+        state.dailyUsed = true;
+        state.adsWeek += 1;
+        state.adsMonth += 1;
 
-    const btn = document.getElementById('dailyBtn');
-    btn.style.background = '#262b40';
+        const btn = document.getElementById('dailyBtn');
+        btn.style.background = '#262b40';
 
-    const isJackpot = Math.random() < 0.0001;
-    let targetSectorDeg = 30;
-    let bonusKeys = 5;
+        const isJackpot = Math.random() < 0.0001;
+        let targetSectorDeg = 30;
+        let bonusKeys = 5;
 
-    if (isJackpot) {
-        targetSectorDeg = 330;
-    } else {
-        const variants = [
-            { keys: 5, deg: 30 },
-            { keys: 10, deg: 90 },
-            { keys: 15, deg: 270 },
-            { keys: 25, deg: 210 }
-        ];
-        const pick = variants[Math.floor(Math.random() * variants.length)];
-        bonusKeys = pick.keys;
-        targetSectorDeg = pick.deg;
-    }
-
-    wheelDeg += 1800 + (360 - targetSectorDeg);
-    document.getElementById('wheelDisc').style.transform = `rotate(${wheelDeg}deg)`;
-
-    setTimeout(() => {
         if (isJackpot) {
-            state.inventory.push({ name: 'M4A1-S | Player Two ($5)', price: 5.0, sellKeys: 110 });
-            pushLiveDrop('@Вы', 'M4A1-S | Player Two', 'rare');
-            showToast('🔥 ДЖЕКПОТ 0.01%! Выпал скин за $5!');
+            targetSectorDeg = 330;
         } else {
-            state.keys += bonusKeys;
-            showToast('🎡 Колесо остановилось: +' + bonusKeys + ' 🔑!');
+            const variants = [
+                { keys: 5, deg: 30 },
+                { keys: 10, deg: 90 },
+                { keys: 15, deg: 270 },
+                { keys: 25, deg: 210 }
+            ];
+            const pick = variants[Math.floor(Math.random() * variants.length)];
+            bonusKeys = pick.keys;
+            targetSectorDeg = pick.deg;
         }
-        updateUI();
-    }, 4100);
 
-    let secondsLeft = 86400;
-    const timer = setInterval(() => {
-        secondsLeft -= 1;
-        if (secondsLeft <= 0) {
-            clearInterval(timer);
-            state.dailyUsed = false;
-            btn.innerText = '🎬 Крутить за 1 рекламу';
-            btn.style.background = 'var(--green)';
-            return;
-        }
-        const h = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
-        const m = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
-        const s = String(secondsLeft % 60).padStart(2, '0');
-        btn.innerText = `⏳ Доступно через ${h}:${m}:${s}`;
-    }, 1000);
+        wheelDeg += 1800 + (360 - targetSectorDeg);
+        document.getElementById('wheelDisc').style.transform = `rotate(${wheelDeg}deg)`;
+
+        setTimeout(() => {
+            if (isJackpot) {
+                pushLiveDrop('@Вы', 'M4A1-S | Player Two', 'rare');
+                openWinModal({ name: 'M4A1-S | Player Two', price: 5.0, sellKeys: 110 });
+            } else {
+                state.keys += bonusKeys;
+                showToast('🎡 Колесо остановилось: +' + bonusKeys + ' 🔑!');
+                updateUI();
+            }
+        }, 4100);
+    });
 }
 
 function renderBattlePass() {
@@ -418,30 +508,79 @@ function withdrawSkin(idx) {
     const url = document.getElementById('tradeUrl').value.trim();
     if (!url.includes('://steamcommunity.com')) return showToast('Сначала вставь и сохрани свою Steam Trade URL!');
     const item = state.inventory[idx];
+    const uname = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? '@' + (tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.id) : 'Игрок';
     state.inventory.splice(idx, 1);
-    showToast('Заявка на вывод ' + item.name + ' отправлена!');
+
+    if (tg && tg.sendData) {
+        try { tg.sendData(JSON.stringify({ action: 'withdraw', user: uname, skin: item.name, price: item.price, tradeUrl: url })); } catch (e) {}
+    }
+    showToast(`Заявка на вывод ${item.name} отправлена админу!`);
     updateUI();
 }
 
 function saveTradeUrl() {
     const url = document.getElementById('tradeUrl').value.trim();
     if (!url.includes('://steamcommunity.com')) return showToast('Неверная ссылка обмена Steam!');
+    localStorage.setItem('westyloot_trade', url);
     showToast('Steam Trade URL сохранена!');
 }
 
 function usePromo() {
     const code = document.getElementById('promoCode').value.trim().toUpperCase();
     if (!code) return showToast('Введи промокод!');
-    showToast('Проверка промокода на сервере...');
+    if (!state.usedPromos) state.usedPromos = [];
+    if (state.usedPromos.includes(code)) return showToast('Ты уже активировал этот промокод!');
+
+    const PROMOS = {
+        'WESTYSTART': { keys: 5, coins: 5000 },
+        'STANDOFF2':  { keys: 3, coins: 10000 }
+    };
+
+    if (PROMOS[code]) {
+        state.usedPromos.push(code);
+        state.keys += PROMOS[code].keys;
+        state.coins += PROMOS[code].coins;
+        document.getElementById('promoCode').value = '';
+        showToast(`Промокод активирован! +${PROMOS[code].keys} 🔑 и +${PROMOS[code].coins.toLocaleString()} монет`);
+        updateUI();
+    } else {
+        showToast('Неверный промокод');
+    }
 }
 
-initLiveFeed();
-buildTrack('12 🔑');
-updateUI();
-window.addEventListener('beforeunload', () => {
-    localStorage.setItem('westyloot_save', JSON.stringify(state));
-});
-setInterval(() => {
-    localStorage.setItem('westyloot_save', JSON.stringify(state));
-}, 1000);
+let isCloudLoaded = false;
+function saveProgress() {
+    if (!isCloudLoaded) return;
+    const raw = JSON.stringify(state);
+    try { localStorage.setItem('westyloot_save', raw); } catch (e) {}
+    if (tg && tg.CloudStorage) tg.CloudStorage.setItem('westyloot_save', raw);
+}
 
+const origUpdateUI = updateUI;
+updateUI = function() {
+    origUpdateUI();
+    saveProgress();
+};
+
+initLiveFeed();
+initReferrals();
+selectCase('free_25', true);
+
+const savedTrade = localStorage.getItem('westyloot_trade');
+if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('tradeUrl').value = savedTrade;
+try {
+const localRaw = localStorage.getItem('westyloot_save');
+if (localRaw) state = { ...state, ...JSON.parse(localRaw) };
+} catch (e) {}
+if (tg && tg.CloudStorage) {
+tg.CloudStorage.getItem('westyloot_save', (err, val) => {
+if (!err && val) {
+try { state = { ...state, ...JSON.parse(val) }; } catch (e) {}
+}
+isCloudLoaded = true;
+origUpdateUI();
+});
+} else {
+isCloudLoaded = true;
+origUpdateUI();
+}
