@@ -609,11 +609,29 @@ setInterval(() => {
 }, 1000);
 
 let isCloudLoaded = false;
+const API_BASE = "https://pythonanywhere.com";
+let isCloudLoaded = false;
+let saveTimer = null;
+
+function getPlayerId() {
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        return String(tg.initDataUnsafe.user.id);
+    }
+    return "guest_777";
+}
+
 function saveProgress() {
     if (!isCloudLoaded) return;
     const raw = JSON.stringify(state);
     try { localStorage.setItem('westyloot_save', raw); } catch (e) {}
-    if (tg && tg.CloudStorage) tg.CloudStorage.setItem('westyloot_save', raw);
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+        fetch(`${API_BASE}/save/${getPlayerId()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: raw
+        }).catch(() => {});
+    }, 600);
 }
 
 const origUpdateUI = updateUI;
@@ -629,20 +647,21 @@ selectCase('free_25', true);
 const savedTrade = localStorage.getItem('westyloot_trade');
 if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('tradeUrl').value = savedTrade;
 
-try {
-    const localRaw = localStorage.getItem('westyloot_save');
-    if (localRaw) state = { ...state, ...JSON.parse(localRaw) };
-} catch (e) {}
-
-if (tg && tg.CloudStorage) {
-    tg.CloudStorage.getItem('westyloot_save', (err, val) => {
-        if (!err && val) {
-            try { state = { ...state, ...JSON.parse(val) }; } catch (e) {}
+fetch(`${API_BASE}/load/${getPlayerId()}`)
+    .then(r => r.json())
+    .then(serverData => {
+        if (serverData && Object.keys(serverData).length > 0) {
+            state = { ...state, ...serverData };
         }
         isCloudLoaded = true;
         origUpdateUI();
+    })
+    .catch(() => {
+        try {
+            const localRaw = localStorage.getItem('westyloot_save');
+            if (localRaw) state = { ...state, ...JSON.parse(localRaw) };
+        } catch (e) {}
+        isCloudLoaded = true;
+        origUpdateUI();
     });
-} else {
-    isCloudLoaded = true;
-    origUpdateUI();
-}
+
