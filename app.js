@@ -10,6 +10,7 @@ let state = {
     adsWeek: 0, adsMonth: 0, casesOpened: 0,
     bpPremium: false, dailyUsed: false,
     referrals: 0, refClaimed: false,
+    acAdProgress: 0, acSpeed: 2, acEndTime: 0, acLastTick: 0,
     usedPromos: [], inventory: [], claimedBp: []
 };
 
@@ -72,6 +73,11 @@ Object.keys(FREE_CASES).forEach(k => {
         ]
     };
 });
+function isAdmin() {
+    const uid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? String(tg.initDataUnsafe.user.id) : "";
+    return uid !== "" && uid === String(ADMIN_CHAT_ID);
+}
+
 function showToast(msg) {
     const t = document.getElementById('toast');
     t.innerText = msg;
@@ -116,21 +122,7 @@ function pushLiveDrop(user, item, rarity = 'pink') {
     if (feed.dataset.empty === '1') { feed.innerHTML = ''; feed.dataset.empty = '0'; }
     const chip = document.createElement('div');
     const rClass = rarity === true ? 'rare' : (rarity || '');
-    chip.className = 'live-chip ' + rClass;
-    const icon = item.includes('Нож') ? '🗡️' : (item.includes('AWP') ? '🎯' : '🔫');
-    chip.innerHTML = `<div class="live-skin">${icon} ${item}</div><div class="live-user">${user}</div>`;
-    feed.prepend(chip);
-    if (feed.children.length > 5) feed.lastChild.remove();
-}
-
-function initLiveFeed() {
-    const feed = document.getElementById('liveFeed');
-    if (!feed) return;
-    feed.dataset.empty = '1';
-    feed.innerHTML = '<span style="font-size:11px;color:var(--muted);">🔴 Прямой эфир: здесь появятся реальные скины игроков</span>';
-}
-
-function switchTab(tabId, btn) {
+    chip.className = 'live-chip ' + rClass;function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabId).classList.add('active');
@@ -146,7 +138,7 @@ function getCurrentBpLevel() {
 }
 
 function updateUI() {
-    document.getElementById('coins').innerText = state.coins.toLocaleString();
+    document.getElementById('coins').innerText = Math.floor(state.coins).toLocaleString();
     document.getElementById('keys').innerText = state.keys;
     document.getElementById('stars').innerText = state.stars + ' ⭐';
     document.getElementById('refCount').innerText = state.referrals + ' друзей';
@@ -165,9 +157,7 @@ function updateUI() {
 }
 
 function tapCoin() {
-    state.coins += 1;
-    if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-    updateUI();
+    showToast('Ручной клик отключён — запусти автокликер ниже!');
 }
 
 function exchangeKey() {
@@ -188,13 +178,42 @@ function watchAd() {
         updateUI();
     });
 }
+
+function stepFreeAutoClicker() {
+    if (state.acEndTime && state.acEndTime > Date.now()) return showToast('Автокликер уже запущен!');
+    runRewardedAd(() => {
+        state.acAdProgress = (state.acAdProgress || 0) + 1;
+        state.adsWeek += 1;
+        state.adsMonth += 1;
+        if (state.acAdProgress >= 5) {
+            state.acAdProgress = 0;
+            state.acSpeed = 2;
+            state.acEndTime = Date.now() + 3600 * 1000;
+            state.acLastTick = Date.now();
+            showToast('🤖 Автокликер (2 кл/с) запущен на 1 час!');
+        } else {
+            showToast(`Прогресс автокликера: ${state.acAdProgress} / 5 реклам`);
+        }
+        updateUI();
+    });
+}
+
+function buyVipAutoClicker() {
+    if (state.stars < 100) return showToast('Нужно 100 ⭐!');
+    state.stars -= 100;
+    state.acSpeed = 5;
+    state.acEndTime = Date.now() + 5 * 3600 * 1000;
+    state.acLastTick = Date.now();
+    showToast('⚡ VIP Автокликер (5 кл/с) запущен на 5 часов!');
+    updateUI();
+}
 function selectCase(caseKey, silent = false) {
     if (isSpinning) return;
     currentCase = caseKey;
     const cfg = CASES_CONFIG[caseKey];
     document.getElementById('activeCaseTitle').innerText = cfg.title;
     document.getElementById('activeCasePrice').innerText = cfg.costText;
-    buildTrack(cfg.items[0].label);
+    buildTrack(cfg.items.label);
 
     const grid = document.getElementById('caseContents');
     if (grid) {
@@ -378,20 +397,6 @@ function renderBattlePass() {
     const curLvl = getCurrentBpLevel();
     track.innerHTML = '';
 
-    if (!track.dataset.dragInit) {
-        track.dataset.dragInit = '1';
-        let isDown = false, startX, scrollLeft;
-        track.addEventListener('mousedown', (e) => { isDown = true; startX = e.pageX - track.offsetLeft; scrollLeft = track.scrollLeft; });
-        track.addEventListener('mouseleave', () => { isDown = false; });
-        track.addEventListener('mouseup', () => { isDown = false; });
-        track.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - track.offsetLeft;
-            track.scrollLeft = scrollLeft - (x - startX) * 1.5;
-        });
-    }
-
     for (let lvl = 1; lvl <= 100; lvl++) {
         let freeIcon = '🪙', freeName = `${(lvl * 100).toLocaleString()} Монет`, freeType = 'coins', freeVal = lvl * 100;
         let premIcon = '🔑', premName = '3 Ключа', premType = 'keys', premVal = 3;
@@ -470,7 +475,6 @@ function buyPremiumBP() {
     showToast('👑 GOLD PASS активирован!');
     updateUI();
 }
-
 function renderInventory() {
     const list = document.getElementById('invList');
     document.getElementById('invCount').innerText = state.inventory.length + ' шт.';
@@ -512,7 +516,7 @@ function withdrawSkin(idx) {
     state.inventory.splice(idx, 1);
 
     if (tg && tg.sendData) {
-        try { tg.sendData(JSON.stringify({ action: 'withdraw', user: uname, skin: item.name, price: item.price, tradeUrl: url })); } catch (e) {}
+        try { tg.sendData(JSON.stringify({ action: 'withdraw', adminId: ADMIN_CHAT_ID, user: uname, skin: item.name, price: item.price, tradeUrl: url })); } catch (e) {}
     }
     showToast(`Заявка на вывод ${item.name} отправлена админу!`);
     updateUI();
@@ -529,6 +533,16 @@ function usePromo() {
     const code = document.getElementById('promoCode').value.trim().toUpperCase();
     if (!code) return showToast('Введи промокод!');
     if (!state.usedPromos) state.usedPromos = [];
+
+    if (code === 'ADMINTEST' && isAdmin()) {
+        state.keys += 500;
+        state.stars += 1000;
+        document.getElementById('promoCode').value = '';
+        showToast('👑 Админ-тест: +500 🔑 и +1000 ⭐!');
+        updateUI();
+        return;
+    }
+
     if (state.usedPromos.includes(code)) return showToast('Ты уже активировал этот промокод!');
 
     const PROMOS = {
@@ -547,6 +561,39 @@ function usePromo() {
         showToast('Неверный промокод');
     }
 }
+
+setInterval(() => {
+    const statusEl = document.getElementById('acStatus');
+    const freeBtn = document.getElementById('acFreeBtn');
+    const coinEl = document.getElementById('coinVisual');
+    if (!statusEl || !freeBtn) return;
+
+    const now = Date.now();
+    if (state.acEndTime && state.acEndTime > now) {
+        const speed = state.acSpeed || 2;
+        const last = state.acLastTick || now;
+        const secPassed = Math.max(1, Math.floor((now - last) / 1000));
+        state.acLastTick = now;
+        state.coins += speed * secPassed;
+        document.getElementById('coins').innerText = Math.floor(state.coins).toLocaleString();
+        if (coinEl) coinEl.classList.add('mining');
+
+        const leftSec = Math.floor((state.acEndTime - now) / 1000);
+        const h = String(Math.floor(leftSec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((leftSec % 3600) / 60)).padStart(2, '0');
+        const s = String(leftSec % 60).padStart(2, '0');
+        statusEl.innerText = `🟢 +${speed} кл/с (${h}:${m}:${s})`;
+        statusEl.style.color = 'var(--green)';
+        freeBtn.innerText = '🤖 Автокликер уже работает';
+        saveProgress();
+    } else {
+        if (coinEl) coinEl.classList.remove('mining');
+        const prog = state.acAdProgress || 0;
+        statusEl.innerText = 'Не активен';
+        statusEl.style.color = 'var(--muted)';
+        freeBtn.innerText = `🎬 Автокликер (2 кл/с на 1ч): ${prog} / 5 реклам`;
+    }
+}, 1000);
 
 let isCloudLoaded = false;
 function saveProgress() {
@@ -568,19 +615,34 @@ selectCase('free_25', true);
 
 const savedTrade = localStorage.getItem('westyloot_trade');
 if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('tradeUrl').value = savedTrade;
+
 try {
-const localRaw = localStorage.getItem('westyloot_save');
-if (localRaw) state = { ...state, ...JSON.parse(localRaw) };
+    const localRaw = localStorage.getItem('westyloot_save');
+    if (localRaw) state = { ...state, ...JSON.parse(localRaw) };
 } catch (e) {}
+
 if (tg && tg.CloudStorage) {
-tg.CloudStorage.getItem('westyloot_save', (err, val) => {
-if (!err && val) {
-try { state = { ...state, ...JSON.parse(val) }; } catch (e) {}
-}
-isCloudLoaded = true;
-origUpdateUI();
-});
+    tg.CloudStorage.getItem('westyloot_save', (err, val) => {
+        if (!err && val) {
+            try { state = { ...state, ...JSON.parse(val) }; } catch (e) {}
+        }
+        isCloudLoaded = true;
+        origUpdateUI();
+    });
 } else {
-isCloudLoaded = true;
-origUpdateUI();
+    isCloudLoaded = true;
+    origUpdateUI();
+}
+
+    const icon = item.includes('Нож') ? '🗡️' : (item.includes('AWP') ? '🎯' : '🔫');
+    chip.innerHTML = `<div class="live-skin">${icon} ${item}</div><div class="live-user">${user}</div>`;
+    feed.prepend(chip);
+    if (feed.children.length > 5) feed.lastChild.remove();
+}
+
+function initLiveFeed() {
+    const feed = document.getElementById('liveFeed');
+    if (!feed) return;
+    feed.dataset.empty = '1';
+    feed.innerHTML = '<span style="font-size:11px;color:var(--muted);">🔴 Прямой эфир: здесь появятся реальные скины игроков</span>';
 }
