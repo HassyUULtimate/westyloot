@@ -122,7 +122,20 @@ function pushLiveDrop(user, item, rarity = 'pink') {
     if (feed.dataset.empty === '1') { feed.innerHTML = ''; feed.dataset.empty = '0'; }
     const chip = document.createElement('div');
     const rClass = rarity === true ? 'rare' : (rarity || '');
-    chip.className = 'live-chip ' + rClass;function switchTab(tabId, btn) {
+    chip.className = 'live-chip ' + rClass;
+    const icon = item.includes('Нож') ? '🗡️' : (item.includes('AWP') ? '🎯' : '🔫');
+    chip.innerHTML = `<div class="live-skin">${icon} ${item}</div><div class="live-user">${user}</div>`;
+    feed.prepend(chip);
+    if (feed.children.length > 5) feed.lastChild.remove();
+}
+
+function initLiveFeed() {
+    const feed = document.getElementById('liveFeed');
+    if (!feed) return;
+    feed.dataset.empty = '1';
+    feed.innerHTML = '<span style="font-size:11px;color:var(--muted);">🔴 Прямой эфир: здесь появятся реальные скины игроков</span>';
+}
+function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabId).classList.add('active');
@@ -632,17 +645,4 @@ if (tg && tg.CloudStorage) {
 } else {
     isCloudLoaded = true;
     origUpdateUI();
-}
-
-    const icon = item.includes('Нож') ? '🗡️' : (item.includes('AWP') ? '🎯' : '🔫');
-    chip.innerHTML = `<div class="live-skin">${icon} ${item}</div><div class="live-user">${user}</div>`;
-    feed.prepend(chip);
-    if (feed.children.length > 5) feed.lastChild.remove();
-}
-
-function initLiveFeed() {
-    const feed = document.getElementById('liveFeed');
-    if (!feed) return;
-    feed.dataset.empty = '1';
-    feed.innerHTML = '<span style="font-size:11px;color:var(--muted);">🔴 Прямой эфир: здесь появятся реальные скины игроков</span>';
 }
