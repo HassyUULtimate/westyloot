@@ -16,7 +16,7 @@
         .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); flex-shrink:0; animation:pulse 1.5s infinite; }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
         .live-feed { display:flex; gap:8px; overflow:hidden; white-space:nowrap; }
-        .live-chip { min-width:118px; background:linear-gradient(180deg, rgba(59,130,246,0.22), #151929); padding:6px 10px; border-radius:10px; border-bottom:3px solid #3b82f6; display:inline-flex; flex-direction:column; gap:2px; animation:slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow:0 4px 12px rgba(0,0,0,0.35); }
+        .live-chip { min-width:118px; background:linear-gradient(180deg, rgba(59,130,246,0.22), #151929); padding:6px 10px; border-radius:10px; border-bottom:3px solid #3b82f6; display:inline-flex; flex-direction:column; gap:2px; animation:slideIn 0.4s ease; box-shadow:0 4px 12px rgba(0,0,0,0.35); }
         .live-chip.pink { background:linear-gradient(180deg, rgba(217,70,239,0.25), #151929); border-bottom-color:#d946ef; }
         .live-chip.rare { background:linear-gradient(180deg, rgba(239,68,68,0.28), #151929); border-bottom-color:#ef4444; }
         .live-chip.gold { background:linear-gradient(180deg, rgba(245,158,11,0.32), #151929); border-bottom-color:#f59e0b; }
@@ -24,26 +24,25 @@
         .live-user { font-size:9px; color:var(--muted); font-weight:600; }
         @keyframes slideIn { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
 
-        .header { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; background:var(--card); padding:10px 12px; border-radius:16px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 18px rgba(139,92,246,0.10); }
+        .header { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; background:var(--card); padding:10px 12px; border-radius:16px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45); }
         .stat { display:flex; flex-direction:column; align-items:center; }
         .stat-label { font-size:10px; color:var(--muted); text-transform:uppercase; }
         .stat-val { font-size:16px; font-weight:800; color:var(--accent); margin-top:2px; }
         .stat-val.stars { color:var(--star); }
-        .card { background:var(--card); border-radius:18px; padding:15px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 18px rgba(139,92,246,0.10); }
+        .card { background:var(--card); border-radius:18px; padding:15px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45); }
         .card-title { font-size:15px; font-weight:800; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
         .badge { font-size:11px; padding:3px 8px; border-radius:8px; background:rgba(245,158,11,0.15); color:var(--accent); font-weight:700; }
         .badge.star { background:rgba(56,189,248,0.15); color:var(--star); }
         .badge.purple { background:rgba(168,85,247,0.18); color:#d8b4fe; }
         .tab-content { display:none; }
         .tab-content.active { display:block; }
-
         .modal-overlay { position:fixed; inset:0; background:rgba(5,7,12,0.85); backdrop-filter:blur(6px); z-index:200; display:none; align-items:center; justify-content:center; padding:18px; }
-        .modal-box { width:100%; max-width:340px; background:linear-gradient(180deg, #1e2338, #131624); border:1.5px solid var(--purple); border-radius:22px; padding:22px 18px; text-align:center; box-shadow:0 0 40px rgba(168,85,247,0.4); animation:popIn 0.28s ease; }
-        @keyframes popIn { from { transform:scale(0.85); opacity:0; } to { transform:scale(1); opacity:1; } }
+        .modal-box { width:100%; max-width:340px; background:linear-gradient(180deg, #1e2338, #131624); border:1.5px solid var(--purple); border-radius:22px; padding:22px 18px; text-align:center; box-shadow:0 0 40px rgba(168,85,247,0.4); }
         .modal-icon { font-size:54px; margin:8px 0; }
         .modal-title { font-size:18px; font-weight:900; margin-bottom:4px; }
         .modal-sub { font-size:13px; color:var(--green); font-weight:700; margin-bottom:16px; }
-        .roulette-wrap { position:relative; height:88px; background:#08090e; border-radius:12px; overflow:hidden; margin-bottom:12px; border:1px solid rgba(167,139,250,0.40); box-shadow:0 0 24px rgba(139,92,246,0.18), inset 0 0 18px rgba(139,92,246,0.12); }
+
+        .roulette-wrap { position:relative; height:88px; background:#08090e; border-radius:12px; overflow:hidden; margin-bottom:12px; border:1px solid rgba(167,139,250,0.40); }
         .roulette-line { position:absolute; left:50%; top:0; bottom:0; width:3px; background:var(--accent); z-index:10; transform:translateX(-50%); box-shadow:0 0 12px var(--accent); }
         .roulette-track { display:flex; height:100%; align-items:center; }
         .r-item { min-width:86px; height:72px; margin:0 4px; background:#1c2033; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; text-align:center; padding:4px; border-bottom:3px solid #3b82f6; }
@@ -65,9 +64,9 @@
         .btn-dark { background:var(--card-light); color:#fff; margin-top:8px; }
         .btn-sm { padding:8px 12px; font-size:12px; width:auto; }
         .click-area { text-align:center; padding:8px 0 12px; }
-        .coin-btn { width:124px; height:124px; border-radius:50%; background:radial-gradient(circle,#fbbf24,#d97706); border:6px solid #78350f; font-size:44px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 0 32px rgba(139,92,246,0.35), 0 0 18px rgba(245,158,11,0.45); }
-        .coin-btn:active { transform:scale(0.91); }
-
+        .coin-btn { width:116px; height:116px; border-radius:50%; background:radial-gradient(circle,#fbbf24,#d97706); border:6px solid #78350f; font-size:42px; display:inline-flex; align-items:center; justify-content:center; cursor:default; box-shadow:0 0 32px rgba(139,92,246,0.35), 0 0 18px rgba(245,158,11,0.45); }
+        .coin-btn.mining { animation:spinPulse 1.4s infinite ease-in-out; box-shadow:0 0 42px rgba(16,185,129,0.55); }
+        @keyframes spinPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
         .shop-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
         .shop-item { background:var(--card-light); border-radius:14px; padding:12px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; }
         .shop-item-icon { font-size:28px; margin-bottom:6px; }
@@ -98,7 +97,7 @@
         .bp-claim-btn { margin-top:6px; width:100%; padding:5px; font-size:10px; font-weight:800; border:none; border-radius:6px; background:var(--green); color:#fff; cursor:pointer; }
         .bp-claim-btn:disabled { background:#262b40; color:var(--muted); cursor:default; }
 
-        .nav { position:fixed; bottom:0; left:0; right:0; background:#131624; border-top:1px solid rgba(167,139,250,0.28); box-shadow:0 -8px 30px rgba(139,92,246,0.16); display:grid; grid-template-columns:repeat(4,1fr); padding:8px 4px 12px; z-index:50; }
+        .nav { position:fixed; bottom:0; left:0; right:0; background:#131624; border-top:1px solid rgba(167,139,250,0.28); display:grid; grid-template-columns:repeat(4,1fr); padding:8px 4px 12px; z-index:50; }
         .nav-btn { background:none; border:none; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:700; cursor:pointer; }
         .nav-btn.active { color:var(--accent); }
         .nav-icon { font-size:20px; }
@@ -107,8 +106,6 @@
 </head>
 <body>
     <div id="toast" class="toast"></div>
-
-    <!-- Модалка выигрыша скина -->
     <div id="winModal" class="modal-overlay">
         <div class="modal-box">
             <div style="font-size:11px;color:var(--purple);font-weight:800;text-transform:uppercase;">🎉 Новый предмет!</div>
@@ -119,7 +116,6 @@
             <button class="btn btn-dark" style="margin:0;" id="modalSellBtn" onclick="closeWinModal(true)">💰 Продать за +55 🔑</button>
         </div>
     </div>
-
     <div class="live-bar"><div class="live-dot"></div><div class="live-feed" id="liveFeed"></div></div>
     <div class="header">
         <div class="stat"><span class="stat-label">Монеты</span><span class="stat-val" id="coins">0</span></div>
@@ -128,14 +124,26 @@
     </div>
     <div id="tab-home" class="tab-content active">
         <div class="card">
-            <div class="card-title"><span>⚡ Кликер монет</span><span class="badge">8 500 = 1 🔑</span></div>
-            <div class="click-area"><div class="coin-btn" onclick="tapCoin()">🪙</div></div>
+            <div class="card-title"><span>🤖 Майнер монет</span><span class="badge">8 500 = 1 🔑</span></div>
+            <div class="click-area"><div class="coin-btn" id="coinVisual" onclick="tapCoin()">🪙</div></div>
             <button class="btn btn-dark" onclick="exchangeKey()">Обменять 8 500 монет на 1 🔑</button>
             <button class="btn btn-green" onclick="watchAd()">🎬 Смотреть рекламу (+1–2 🔑)</button>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(167,139,250,0.2);">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+                    <span style="font-weight:800;color:var(--purple);">⚙️ Автокликер</span>
+                    <span id="acStatus" style="color:var(--muted);font-weight:700;">Не активен</span>
+                </div>
+                <button class="btn btn-purple" style="margin:0 0 6px 0;padding:11px;font-size:13px;" id="acFreeBtn" onclick="stepFreeAutoClicker()">
+                    🎬 Автокликер (2 кл/с на 1ч): 0 / 5 реклам
+                </button>
+                <button class="btn btn-star" style="margin:0;padding:11px;font-size:13px;" onclick="buyVipAutoClicker()">
+                    ⚡ VIP Автокликер (5 кл/с на 5ч) — 100 ⭐
+                </button>
+            </div>
         </div>
         <div class="card">
             <div class="card-title"><span>👥 Пригласи друзей</span><span class="badge purple" id="refCount">0 друзей</span></div>
-            <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Получай <b style="color:#fff;">+5 🔑</b> за каждого приглашённого друга и <b style="color:var(--star);">10%</b> от его покупок!</p>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Получай <b style="color:#fff;">+5 🔑</b> за каждого друга и <b style="color:var(--star);">10%</b> от его покупок!</p>
             <div class="input-row">
                 <input type="text" id="refLinkInput" class="text-input" readonly value="https://t.me">
                 <button class="btn btn-purple btn-sm" style="margin:0;" onclick="copyRefLink()">Копия</button>
@@ -221,7 +229,7 @@
         </div>
     </div>
 
-    <div id="tab-inv" class="tab-content">
+        <div id="tab-inv" class="tab-content">
         <div class="card">
             <div class="card-title"><span>🔗 Твоя Steam Trade URL</span></div>
             <div class="input-row">
@@ -239,4 +247,9 @@
         <button class="nav-btn active" onclick="switchTab('home', this)"><span class="nav-icon">🏠</span><span>Главная</span></button>
         <button class="nav-btn" onclick="switchTab('shop', this)"><span class="nav-icon">🛒</span><span>Магазин</span></button>
         <button class="nav-btn" onclick="switchTab('bp', this)"><span class="nav-icon">🏆</span><span>БП и Колесо</span></button>
-<script src="app.js?v=8"></script>
+        <button class="nav-btn" onclick="switchTab('inv', this)"><span class="nav-icon">🎒</span><span>Инвентарь</span></button>
+    </nav>
+
+    <script src="app.js?v=16"></script>
+</body>
+</html>
