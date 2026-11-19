@@ -3,7 +3,7 @@ if (tg) tg.expand();
 
 const ADSGRAM_BLOCK_ID = "";
 const BOT_USERNAME = "westyloot_bot";
-const ADMIN_CHAT_ID = "5888218785";
+const ADMIN_CHAT_ID = "ТВОЙ_TELEGRAM_ID";
 
 let state = {
     coins: 0, keys: 0, stars: 0,
@@ -19,13 +19,13 @@ let wheelDeg = 0;
 let lastWonSkin = null;
 
 const FREE_CASES = {
-    free_25:  { title: '📦 Кейс «Новичок»', cost: 25,  keys:,     skin: { name: 'P250 | Sand Dune', price: 0.25, sellKeys: 6 },   chance: 0.3 },
-    free_50:  { title: '🎒 Кейс «Базовый»', cost: 50,  keys:,   skin: { name: 'Glock-18 | Oxide', price: 0.50, sellKeys: 12 },  chance: 0.5 },
-    free_75:  { title: '🎖️ Кейс «Армейский»', cost: 75, keys:,  skin: { name: 'USP-S | Ticket to Hell', price: 1.00, sellKeys: 24 }, chance: 0.6 },
-    free_100: { title: '🔫 Кейс «Запрещённый»', cost: 100, keys:, skin: { name: 'AK-47 | Slate', price: 2.50, sellKeys: 55 },   chance: 0.7 },
-    free_150: { title: '🔮 Кейс «Засекреченный»', cost: 150, keys:, skin: { name: 'M4A1-S | Decimator', price: 4.00, sellKeys: 90 }, chance: 0.8 },
-    free_200: { title: '🔥 Кейс «Тайный»', cost: 200, keys:, skin: { name: 'AWP | Neo-Noir', price: 6.00, sellKeys: 130 },   chance: 0.9 },
-    free_300: { title: '👑 Кейс «Легендарный»', cost: 300, keys:, skin: { name: 'Deagle | Printstream', price: 15.00, sellKeys: 320 }, chance: 1.0 }
+    free_25:  { title: '📦 Кейс «Новичок»', cost: 25,  k1: 5,  k2: 18,  k3: 35,  k4: 55,  skin: { name: 'P250 | Sand Dune', price: 0.25, sellKeys: 6 },   chance: 0.3 },
+    free_50:  { title: '🎒 Кейс «Базовый»', cost: 50,  k1: 12, k2: 38,  k3: 63,  k4: 100, skin: { name: 'Glock-18 | Oxide', price: 0.50, sellKeys: 12 },  chance: 0.5 },
+    free_75:  { title: '🎖️ Кейс «Армейский»', cost: 75, k1: 20, k2: 55,  k3: 95,  k4: 150, skin: { name: 'USP-S | Ticket to Hell', price: 1.00, sellKeys: 24 }, chance: 0.6 },
+    free_100: { title: '🔫 Кейс «Запрещённый»', cost: 100, k1: 25, k2: 75,  k3: 130, k4: 210, skin: { name: 'AK-47 | Slate', price: 2.50, sellKeys: 55 },   chance: 0.7 },
+    free_150: { title: '🔮 Кейс «Засекреченный»', cost: 150, k1: 40, k2: 115, k3: 200, k4: 320, skin: { name: 'M4A1-S | Decimator', price: 4.00, sellKeys: 90 }, chance: 0.8 },
+    free_200: { title: '🔥 Кейс «Тайный»', cost: 200, k1: 55, k2: 150, k3: 270, k4: 430, skin: { name: 'AWP | Neo-Noir', price: 6.00, sellKeys: 130 },   chance: 0.9 },
+    free_300: { title: '👑 Кейс «Легендарный»', cost: 300, k1: 85, k2: 230, k3: 400, k4: 650, skin: { name: 'Deagle | Printstream', price: 15.00, sellKeys: 320 }, chance: 1.0 }
 };
 
 const CASES_CONFIG = {
@@ -64,10 +64,10 @@ Object.keys(FREE_CASES).forEach(k => {
     CASES_CONFIG[k] = {
         title: fc.title, costText: fc.cost + ' 🔑', currency: 'keys', cost: fc.cost,
         items: [
-            { label: fc.keys[0] + ' 🔑', chance: '50%', tier: '' },
-            { label: fc.keys[1] + ' 🔑', chance: '35%', tier: '' },
-            { label: fc.keys[2] + ' 🔑', chance: '10%', tier: 'gold' },
-            { label: fc.keys[3] + ' 🔑', chance: (5 - fc.chance).toFixed(1) + '%', tier: 'gold' },
+            { label: fc.k1 + ' 🔑', chance: '50%', tier: '' },
+            { label: fc.k2 + ' 🔑', chance: '35%', tier: '' },
+            { label: fc.k3 + ' 🔑', chance: '10%', tier: 'gold' },
+            { label: fc.k4 + ' 🔑', chance: (5 - fc.chance).toFixed(1) + '%', tier: 'gold' },
             { label: `${fc.skin.name} ($${fc.skin.price})`, chance: fc.chance + '%', tier: 'red' }
         ]
     };
@@ -272,10 +272,10 @@ function spinSelectedCase(isFast = false) {
 
     if (FREE_CASES[currentCase]) {
         const fc = FREE_CASES[currentCase];
-        if (roll < 50) { winKeys = fc.keys[0]; winText = winKeys + ' 🔑'; }
-        else if (roll < 85) { winKeys = fc.keys[1]; winText = winKeys + ' 🔑'; }
-        else if (roll < 95) { winKeys = fc.keys[2]; winText = winKeys + ' 🔑'; }
-        else if (roll < (100 - fc.chance)) { winKeys = fc.keys[3]; winText = winKeys + ' 🔑'; }
+        if (roll < 50) { winKeys = fc.k1; winText = winKeys + ' 🔑'; }
+        else if (roll < 85) { winKeys = fc.k2; winText = winKeys + ' 🔑'; }
+        else if (roll < 95) { winKeys = fc.k3; winText = winKeys + ' 🔑'; }
+        else if (roll < (100 - fc.chance)) { winKeys = fc.k4; winText = winKeys + ' 🔑'; }
         else { winText = `${fc.skin.name} ($${fc.skin.price})`; skinObj = { ...fc.skin }; }
     } else if (currentCase === 'donate_start') {
         if (roll < 70) { winText = 'P250 | Sand Dune ($0.20)'; skinObj = { name: 'P250 | Sand Dune', price: 0.20, sellKeys: 5 }; }
