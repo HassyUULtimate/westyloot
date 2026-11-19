@@ -3,7 +3,7 @@ if (tg) tg.expand();
 
 const ADSGRAM_BLOCK_ID = "";
 const BOT_USERNAME = "westyloot_bot";
-const ADMIN_CHAT_ID = "ТВОЙ_TELEGRAM_ID";
+const ADMIN_CHAT_ID = "5888218785";
 
 let state = {
     coins: 0, keys: 0, stars: 0,
