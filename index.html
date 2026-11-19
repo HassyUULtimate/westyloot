@@ -1,10 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WestyLoot</title>
     <script src="https://telegram.org"></script>
+    <script src="https://adsgram.ai"></script>
     <style>
         :root { --bg:#0d0f17; --card:#171a29; --card-light:#20253b; --accent:#f59e0b; --star:#38bdf8; --text:#fff; --muted:#8b92a8; --green:#10b981; --red:#ef4444; --purple:#a855f7; }
         * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; user-select:none; }
@@ -14,9 +15,13 @@
         .live-bar { display:flex; align-items:center; gap:8px; background:#121522; padding:7px 10px; border-radius:12px; margin-bottom:10px; border:1px solid rgba(167,139,250,0.25); overflow:hidden; }
         .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); flex-shrink:0; animation:pulse 1.5s infinite; }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
-        .live-feed { display:flex; gap:6px; overflow:hidden; white-space:nowrap; font-size:11px; }
-        .live-chip { background:#1d2236; padding:4px 8px; border-radius:8px; border-left:3px solid var(--accent); display:inline-flex; align-items:center; gap:5px; animation:slideIn 0.35s ease; }
-        .live-chip.rare { border-left-color:var(--red); background:linear-gradient(90deg,#2e141a,#1d2236); }
+        .live-feed { display:flex; gap:8px; overflow:hidden; white-space:nowrap; }
+        .live-chip { min-width:118px; background:linear-gradient(180deg, rgba(59,130,246,0.22), #151929); padding:6px 10px; border-radius:10px; border-bottom:3px solid #3b82f6; display:inline-flex; flex-direction:column; gap:2px; animation:slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow:0 4px 12px rgba(0,0,0,0.35); }
+        .live-chip.pink { background:linear-gradient(180deg, rgba(217,70,239,0.25), #151929); border-bottom-color:#d946ef; }
+        .live-chip.rare { background:linear-gradient(180deg, rgba(239,68,68,0.28), #151929); border-bottom-color:#ef4444; }
+        .live-chip.gold { background:linear-gradient(180deg, rgba(245,158,11,0.32), #151929); border-bottom-color:#f59e0b; }
+        .live-skin { font-size:11px; font-weight:800; color:#fff; display:flex; align-items:center; gap:4px; }
+        .live-user { font-size:9px; color:var(--muted); font-weight:600; }
         @keyframes slideIn { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
 
         .header { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; background:var(--card); padding:10px 12px; border-radius:16px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 18px rgba(139,92,246,0.10); }
@@ -31,12 +36,26 @@
         .badge.purple { background:rgba(168,85,247,0.18); color:#d8b4fe; }
         .tab-content { display:none; }
         .tab-content.active { display:block; }
+
+        .modal-overlay { position:fixed; inset:0; background:rgba(5,7,12,0.85); backdrop-filter:blur(6px); z-index:200; display:none; align-items:center; justify-content:center; padding:18px; }
+        .modal-box { width:100%; max-width:340px; background:linear-gradient(180deg, #1e2338, #131624); border:1.5px solid var(--purple); border-radius:22px; padding:22px 18px; text-align:center; box-shadow:0 0 40px rgba(168,85,247,0.4); animation:popIn 0.28s ease; }
+        @keyframes popIn { from { transform:scale(0.85); opacity:0; } to { transform:scale(1); opacity:1; } }
+        .modal-icon { font-size:54px; margin:8px 0; }
+        .modal-title { font-size:18px; font-weight:900; margin-bottom:4px; }
+        .modal-sub { font-size:13px; color:var(--green); font-weight:700; margin-bottom:16px; }
         .roulette-wrap { position:relative; height:88px; background:#08090e; border-radius:12px; overflow:hidden; margin-bottom:12px; border:1px solid rgba(167,139,250,0.40); box-shadow:0 0 24px rgba(139,92,246,0.18), inset 0 0 18px rgba(139,92,246,0.12); }
         .roulette-line { position:absolute; left:50%; top:0; bottom:0; width:3px; background:var(--accent); z-index:10; transform:translateX(-50%); box-shadow:0 0 12px var(--accent); }
         .roulette-track { display:flex; height:100%; align-items:center; }
         .r-item { min-width:86px; height:72px; margin:0 4px; background:#1c2033; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; text-align:center; padding:4px; border-bottom:3px solid #3b82f6; }
         .r-item.gold { border-bottom-color:var(--accent); background:linear-gradient(180deg,#2e240d,#1c2033); color:var(--accent); }
         .r-item.red { border-bottom-color:var(--red); background:linear-gradient(180deg,#331418,#1c2033); color:#fca5a5; }
+        .spin-row { display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:12px; }
+        .contents-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-top:8px; }
+        .c-chip { background:#111421; border-radius:9px; padding:6px 4px; text-align:center; border-bottom:2px solid #3b82f6; }
+        .c-chip.gold { border-bottom-color:var(--accent); }
+        .c-chip.red { border-bottom-color:var(--red); }
+        .c-name { font-size:10px; font-weight:700; color:#fff; }
+        .c-chance { font-size:9px; color:var(--muted); margin-top:2px; }
 
         .btn { width:100%; padding:13px; border:none; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; color:#000; background:var(--accent); }
         .btn:active { transform:scale(0.97); }
@@ -88,11 +107,24 @@
 </head>
 <body>
     <div id="toast" class="toast"></div>
+
+    <!-- Модалка выигрыша скина -->
+    <div id="winModal" class="modal-overlay">
+        <div class="modal-box">
+            <div style="font-size:11px;color:var(--purple);font-weight:800;text-transform:uppercase;">🎉 Новый предмет!</div>
+            <div class="modal-icon" id="modalIcon">🔫</div>
+            <div class="modal-title" id="modalTitle">AK-47 | Slate</div>
+            <div class="modal-sub" id="modalPrice">$2.50</div>
+            <button class="btn btn-green" style="margin-bottom:8px;" onclick="closeWinModal(false)">🎒 Забрать в инвентарь</button>
+            <button class="btn btn-dark" style="margin:0;" id="modalSellBtn" onclick="closeWinModal(true)">💰 Продать за +55 🔑</button>
+        </div>
+    </div>
+
     <div class="live-bar"><div class="live-dot"></div><div class="live-feed" id="liveFeed"></div></div>
     <div class="header">
         <div class="stat"><span class="stat-label">Монеты</span><span class="stat-val" id="coins">0</span></div>
-        <div class="stat"><span class="stat-label">Ключи</span><span class="stat-val" id="keys">50</span></div>
-        <div class="stat"><span class="stat-label">Тест Stars</span><span class="stat-val stars" id="stars">500 ⭐</span></div>
+        <div class="stat"><span class="stat-label">Ключи</span><span class="stat-val" id="keys">0</span></div>
+        <div class="stat"><span class="stat-label">Stars</span><span class="stat-val stars" id="stars">0 ⭐</span></div>
     </div>
     <div id="tab-home" class="tab-content active">
         <div class="card">
@@ -103,7 +135,7 @@
         </div>
         <div class="card">
             <div class="card-title"><span>👥 Пригласи друзей</span><span class="badge purple" id="refCount">0 друзей</span></div>
-            <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Получай <b style="color:#fff;">+5 🔑</b> за каждого друга, который посмотрит 5 реклам, и <b style="color:var(--star);">10%</b> от его покупок!</p>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Получай <b style="color:#fff;">+5 🔑</b> за каждого приглашённого друга и <b style="color:var(--star);">10%</b> от его покупок!</p>
             <div class="input-row">
                 <input type="text" id="refLinkInput" class="text-input" readonly value="https://t.me">
                 <button class="btn btn-purple btn-sm" style="margin:0;" onclick="copyRefLink()">Копия</button>
@@ -119,7 +151,7 @@
         <div class="card">
             <div class="card-title"><span>🎟 Промокод</span></div>
             <div class="input-row">
-                <input type="text" id="promoCode" class="text-input" style="text-transform:uppercase;" placeholder="Введите промокод">
+                <input type="text" id="promoCode" class="text-input" style="text-transform:uppercase;" placeholder="Введите промокод...">
                 <button class="btn btn-sm" onclick="usePromo()">ОК</button>
             </div>
         </div>
@@ -127,17 +159,28 @@
 
     <div id="tab-shop" class="tab-content">
         <div class="card">
-            <div class="card-title"><span id="activeCaseTitle">📦 Обычный кейс CS2</span><span class="badge" id="activeCasePrice">50 🔑</span></div>
+            <div class="card-title"><span id="activeCaseTitle">📦 Кейс «Новичок»</span><span class="badge" id="activeCasePrice">25 🔑</span></div>
             <div class="roulette-wrap"><div class="roulette-line"></div><div class="roulette-track" id="track"></div></div>
-            <button class="btn" onclick="spinSelectedCase()">Крутить кейс</button>
+            <div class="spin-row">
+                <button class="btn" onclick="spinSelectedCase(false)">🎰 Крутить</button>
+                <button class="btn btn-purple" style="margin:0;" onclick="spinSelectedCase(true)">⚡ Фаст</button>
+            </div>
+            <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:6px;">📋 Содержимое кейса:</div>
+            <div class="contents-grid" id="caseContents"></div>
         </div>
         <div class="card">
             <div class="card-title"><span>💎 Выбор кейса</span></div>
             <div class="shop-grid">
-                <div class="shop-item"><div><div class="shop-item-icon">📦</div><div class="shop-item-name">Обычный CS2</div><div class="shop-item-sub">Ключи или AK-47 ($3)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('standard')">50 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">📦</div><div class="shop-item-name">Новичок</div><div class="shop-item-sub">Ключи или P250 ($0.25)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_25')">25 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🎒</div><div class="shop-item-name">Базовый</div><div class="shop-item-sub">Ключи или Glock ($0.50)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_50')">50 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🎖️</div><div class="shop-item-name">Армейский</div><div class="shop-item-sub">Ключи или USP-S ($1)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_75')">75 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🔫</div><div class="shop-item-name">Запрещённый</div><div class="shop-item-sub">Ключи или AK-47 ($2.5)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_100')">100 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🔮</div><div class="shop-item-name">Засекреченный</div><div class="shop-item-sub">Ключи или M4A1-S ($4)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_150')">150 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🔥</div><div class="shop-item-name">Тайный</div><div class="shop-item-sub">Ключи или AWP ($6)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_200')">200 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">👑</div><div class="shop-item-name">Легендарный</div><div class="shop-item-sub">Ключи или Deagle ($15)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_300')">300 🔑</button></div>
                 <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Стартовый</div><div class="shop-item-sub">Скины $0.20 – $5.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_start')">50 ⭐</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🔥</div><div class="shop-item-name">Элитный</div><div class="shop-item-sub">Скины $0.60 – $15.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_elite')">150 ⭐</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🗡️</div><div class="shop-item-name">Тайный / Нож</div><div class="shop-item-sub">Скины до $100.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_knife')">500 ⭐</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">⚡</div><div class="shop-item-name">Элитный</div><div class="shop-item-sub">Скины $0.60 – $15.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_elite')">150 ⭐</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🗡️</div><div class="shop-item-name">Ножевой</div><div class="shop-item-sub">Скины до $100.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_knife')">500 ⭐</button></div>
             </div>
         </div>
         <div class="card">
@@ -196,10 +239,3 @@
         <button class="nav-btn active" onclick="switchTab('home', this)"><span class="nav-icon">🏠</span><span>Главная</span></button>
         <button class="nav-btn" onclick="switchTab('shop', this)"><span class="nav-icon">🛒</span><span>Магазин</span></button>
         <button class="nav-btn" onclick="switchTab('bp', this)"><span class="nav-icon">🏆</span><span>БП и Колесо</span></button>
-        <button class="nav-btn" onclick="switchTab('inv', this)"><span class="nav-icon">🎒</span><span>Инвентарь</span></button>
-    </nav>
-
-    <script src="app.js?v=2"></script>
-
-</body>
-</html>
