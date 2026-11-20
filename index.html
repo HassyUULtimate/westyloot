@@ -64,12 +64,12 @@
         .btn-dark { background:var(--card-light); color:#fff; margin-top:8px; }
         .btn-sm { padding:8px 12px; font-size:12px; width:auto; }
         .click-area { text-align:center; padding:8px 0 12px; }
-        .coin-btn { width:116px; height:116px; border-radius:50%; background:radial-gradient(circle,#fbbf24,#d97706); border:6px solid #78350f; font-size:42px; display:inline-flex; align-items:center; justify-content:center; cursor:default; box-shadow:0 0 32px rgba(139,92,246,0.35), 0 0 18px rgba(245,158,11,0.45); }
+        .coin-btn { width:116px; height:116px; border-radius:50%; background:radial-gradient(circle,#fbbf24,#d97706); border:6px solid #78350f; font-size:42px; display:inline-flex; align-items:center; justify-content:center; cursor:default; box-shadow:0 0 32px rgba(139,92,246,0.35); }
         .coin-btn.mining { animation:spinPulse 1.4s infinite ease-in-out; box-shadow:0 0 42px rgba(16,185,129,0.55); }
         @keyframes spinPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
         .shop-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
         .shop-item { background:var(--card-light); border-radius:14px; padding:12px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; }
-        .shop-item-icon { font-size:28px; margin-bottom:6px; }
+        .shop-item-icon { font-size:26px; margin-bottom:5px; }
         .shop-item-name { font-size:13px; font-weight:700; margin-bottom:4px; }
         .shop-item-sub { font-size:11px; color:var(--muted); margin-bottom:10px; }
         .prog-bg { width:100%; height:9px; background:#08090e; border-radius:99px; overflow:hidden; margin:6px 0 12px; }
@@ -108,12 +108,12 @@
     <div id="toast" class="toast"></div>
     <div id="winModal" class="modal-overlay">
         <div class="modal-box">
-            <div style="font-size:11px;color:var(--purple);font-weight:800;text-transform:uppercase;">🎉 Новый предмет!</div>
+            <div style="font-size:11px;color:var(--purple);font-weight:800;">🎉 НОВЫЙ ПРЕДМЕТ!</div>
             <div class="modal-icon" id="modalIcon">🔫</div>
             <div class="modal-title" id="modalTitle">AK-47 | Slate</div>
             <div class="modal-sub" id="modalPrice">$2.50</div>
             <button class="btn btn-green" style="margin-bottom:8px;" onclick="closeWinModal(false)">🎒 Забрать в инвентарь</button>
-            <button class="btn btn-dark" style="margin:0;" id="modalSellBtn" onclick="closeWinModal(true)">💰 Продать за +55 🔑</button>
+            <button class="btn btn-dark" style="margin:0;" id="modalSellBtn" onclick="closeWinModal(true)">💰 Продать</button>
         </div>
     </div>
     <div class="live-bar"><div class="live-dot"></div><div class="live-feed" id="liveFeed"></div></div>
@@ -141,6 +141,7 @@
                 </button>
             </div>
         </div>
+
         <div class="card">
             <div class="card-title"><span>👥 Пригласи друзей</span><span class="badge purple" id="refCount">0 друзей</span></div>
             <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Получай <b style="color:#fff;">+5 🔑</b> за каждого друга и <b style="color:var(--star);">10%</b> от его покупок!</p>
@@ -149,6 +150,7 @@
                 <button class="btn btn-purple btn-sm" style="margin:0;" onclick="copyRefLink()">Копия</button>
             </div>
         </div>
+
         <div class="card">
             <div class="card-title"><span>🎁 Розыгрыши Telegram Stars</span></div>
             <div style="font-size:12px;color:var(--muted);">Недельный (100 ⭐): <b id="adsWeek" style="color:#fff">0</b> / 50 реклам</div>
@@ -156,6 +158,7 @@
             <div style="font-size:12px;color:var(--muted);">Месячный (1 000 ⭐): <b id="adsMonth" style="color:#fff">0</b> / 250 реклам</div>
             <div class="prog-bg"><div class="prog-fill" id="barMonth" style="background:var(--accent);"></div></div>
         </div>
+
         <div class="card">
             <div class="card-title"><span>🎟 Промокод</span></div>
             <div class="input-row">
@@ -164,92 +167,3 @@
             </div>
         </div>
     </div>
-
-    <div id="tab-shop" class="tab-content">
-        <div class="card">
-            <div class="card-title"><span id="activeCaseTitle">📦 Кейс «Новичок»</span><span class="badge" id="activeCasePrice">25 🔑</span></div>
-            <div class="roulette-wrap"><div class="roulette-line"></div><div class="roulette-track" id="track"></div></div>
-            <div class="spin-row">
-                <button class="btn" onclick="spinSelectedCase(false)">🎰 Крутить</button>
-                <button class="btn btn-purple" style="margin:0;" onclick="spinSelectedCase(true)">⚡ Фаст</button>
-            </div>
-            <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:6px;">📋 Содержимое кейса:</div>
-            <div class="contents-grid" id="caseContents"></div>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>💎 Выбор кейса</span></div>
-            <div class="shop-grid">
-                <div class="shop-item"><div><div class="shop-item-icon">📦</div><div class="shop-item-name">Новичок</div><div class="shop-item-sub">Ключи или P250 ($0.25)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_25')">25 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🎒</div><div class="shop-item-name">Базовый</div><div class="shop-item-sub">Ключи или Glock ($0.50)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_50')">50 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🎖️</div><div class="shop-item-name">Армейский</div><div class="shop-item-sub">Ключи или USP-S ($1)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_75')">75 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🔫</div><div class="shop-item-name">Запрещённый</div><div class="shop-item-sub">Ключи или AK-47 ($2.5)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_100')">100 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🔮</div><div class="shop-item-name">Засекреченный</div><div class="shop-item-sub">Ключи или M4A1-S ($4)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_150')">150 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🔥</div><div class="shop-item-name">Тайный</div><div class="shop-item-sub">Ключи или AWP ($6)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_200')">200 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">👑</div><div class="shop-item-name">Легендарный</div><div class="shop-item-sub">Ключи или Deagle ($15)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_300')">300 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Стартовый</div><div class="shop-item-sub">Скины $0.20 – $5.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_start')">50 ⭐</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">⚡</div><div class="shop-item-name">Элитный</div><div class="shop-item-sub">Скины $0.60 – $15.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_elite')">150 ⭐</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🗡️</div><div class="shop-item-name">Ножевой</div><div class="shop-item-sub">Скины до $100.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_knife')">500 ⭐</button></div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>🔑 Купить ключи за Stars</span></div>
-            <div class="shop-grid">
-                <div class="shop-item"><div class="shop-item-name">10 ключей</div><div class="shop-item-sub">Базовый набор</div><button class="btn btn-star btn-sm" style="width:100%" onclick="buyKeysPack(10, 15)">15 ⭐</button></div>
-                <div class="shop-item"><div class="shop-item-name">55 ключей</div><div class="shop-item-sub">+5 в подарок</div><button class="btn btn-star btn-sm" style="width:100%" onclick="buyKeysPack(55, 75)">75 ⭐</button></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="tab-bp" class="tab-content">
-        <div class="card">
-            <div class="card-title"><span>🎡 Колесо Фортуны</span><span class="badge">1 раз в 24ч</span></div>
-            <div class="wheel-container">
-                <div class="wheel-pointer"></div>
-                <div class="wheel-disc" id="wheelDisc">
-                    <div class="w-label" style="transform: rotate(30deg) translateX(-50%);">5 🔑</div>
-                    <div class="w-label" style="transform: rotate(90deg) translateX(-50%);">10 🔑</div>
-                    <div class="w-label" style="transform: rotate(150deg) translateX(-50%);">5 🔑</div>
-                    <div class="w-label" style="transform: rotate(210deg) translateX(-50%);">25 🔑</div>
-                    <div class="w-label" style="transform: rotate(270deg) translateX(-50%);">15 🔑</div>
-                    <div class="w-label" style="transform: rotate(330deg) translateX(-50%); color:#fde047;">СКИН $5</div>
-                </div>
-                <div class="wheel-center">🎯</div>
-            </div>
-            <button class="btn btn-green" id="dailyBtn" onclick="spinDailyWheel()">🎬 Крутить за 1 рекламу</button>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>🏆 Season 1: Westy Pass</span><span class="badge star" id="bpStatus">FREE</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;">
-                <span>Уровень: <b id="bpLvl" style="color:var(--accent)">1</b> / 100</span>
-                <span>Кейсы: <b id="bpCases" style="color:#fff">0</b>/200 | Реклама: <b id="bpAds" style="color:#fff">0</b>/50</span>
-            </div>
-            <div class="prog-bg"><div class="prog-fill" id="barBpCases"></div></div>
-            <div class="bp-track" id="bpTrack"></div>
-            <button class="btn btn-star" style="margin-top:10px;" id="buyBpBtn" onclick="buyPremiumBP()">👑 Разблокировать GOLD PASS (350 ⭐)</button>
-        </div>
-    </div>
-
-        <div id="tab-inv" class="tab-content">
-        <div class="card">
-            <div class="card-title"><span>🔗 Твоя Steam Trade URL</span></div>
-            <div class="input-row">
-                <input type="text" id="tradeUrl" class="text-input" placeholder="https://steamcommunity.com...">
-                <button class="btn btn-sm" onclick="saveTradeUrl()">Сохранить</button>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>🎒 Выбитые скины</span><span class="badge" id="invCount">0 шт.</span></div>
-            <div id="invList"><p style="font-size:13px;color:var(--muted);text-align:center;padding:16px 0;">Пока пусто. Открывай кейсы в Магазине!</p></div>
-        </div>
-    </div>
-
-    <nav class="nav">
-        <button class="nav-btn active" onclick="switchTab('home', this)"><span class="nav-icon">🏠</span><span>Главная</span></button>
-        <button class="nav-btn" onclick="switchTab('shop', this)"><span class="nav-icon">🛒</span><span>Магазин</span></button>
-        <button class="nav-btn" onclick="switchTab('bp', this)"><span class="nav-icon">🏆</span><span>БП и Колесо</span></button>
-        <button class="nav-btn" onclick="switchTab('inv', this)"><span class="nav-icon">🎒</span><span>Инвентарь</span></button>
-    </nav>
-
-    <script src="app.js?v=21"></script>
-</body>
-</html>
