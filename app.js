@@ -110,14 +110,17 @@ function showToast(msg) {
 }
 
 function runRewardedAd(onComplete) {
-    if (ADSGRAM_BLOCK_ID && window.Adsgram) {
-        const AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
-        AdController.show().then(() => { onComplete(); }).catch(() => {
-            showToast('Досмотри рекламу до конца, чтобы получить награду!');
-        });
-    } else {
-        onComplete();
+    if (!window.Adsgram) {
+        return showToast('Рекламный модуль загружается, попробуй через 3 сек...');
     }
+    const AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+    AdController.show()
+        .then(() => {
+            onComplete();
+        })
+        .catch((err) => {
+            showToast('Реклама недоступна или не досмотрена до конца!');
+        });
 }
 
 function initReferrals() {
