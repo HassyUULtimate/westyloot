@@ -1,7 +1,7 @@
 const tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
 if (tg) tg.expand();
 
-const ADSGRAM_BLOCK_ID = "";
+const ADSGRAM_BLOCK_ID = "60949";
 const BOT_USERNAME = "westyloot_bot";
 const ADMIN_CHAT_ID = "5888218785";
 const API_BASE = "https://pythonanywhere.com";
