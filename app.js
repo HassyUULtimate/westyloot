@@ -4,6 +4,7 @@ if (tg) tg.expand();
 const ADSGRAM_BLOCK_ID = "";
 const BOT_USERNAME = "westyloot_bot";
 const ADMIN_CHAT_ID = "5888218785";
+const API_BASE = "https://pythonanywhere.com";
 
 let state = {
     coins: 0, keys: 0, stars: 0,
@@ -14,10 +15,20 @@ let state = {
     usedPromos: [], inventory: [], claimedBp: []
 };
 
-let currentCase = 'free_25';
+let currentCase = 'coin_15k';
 let isSpinning = false;
 let wheelDeg = 0;
 let lastWonSkin = null;
+
+const COIN_CASES = {
+    coin_15k:  { title: '🥉 Кейс «Медный»', cost: 15000,  c1: 4000,   c2: 11000,  c3: 22000,  skin: { name: 'MP9 | Sand Dashed', price: 0.10, sellKeys: 3 },   chance: 0.5 },
+    coin_50k:  { title: '🥈 Кейс «Серебряный»', cost: 50000, c1: 14000,  c2: 38000,  c3: 75000,  skin: { name: 'P250 | Sand Dune', price: 0.25, sellKeys: 6 },    chance: 0.6 },
+    coin_100k: { title: '🥇 Кейс «Золотой»', cost: 100000, c1: 28000,  c2: 75000,  c3: 150000, skin: { name: 'Glock-18 | Oxide', price: 0.50, sellKeys: 12 },   chance: 0.7 },
+    coin_150k: { title: '💠 Кейс «Платиновый»', cost: 150000, c1: 42000, c2: 115000, c3: 225000, skin: { name: 'USP-S | Ticket to Hell', price: 0.80, sellKeys: 20 }, chance: 0.8 },
+    coin_200k: { title: '💎 Кейс «Алмазный»', cost: 200000, c1: 55000,  c2: 150000, c3: 300000, skin: { name: 'AK-47 | Safari Mesh', price: 1.20, sellKeys: 28 }, chance: 1.0 },
+    coin_350k: { title: '🔮 Кейс «Мифический»', cost: 350000, c1: 95000, c2: 265000, c3: 525000, skin: { name: 'AWP | Atheris', price: 2.00, sellKeys: 45 },       chance: 1.2 },
+    coin_500k: { title: '👑 Кейс «Императорский»', cost: 500000, c1: 140000, c2: 380000, c3: 750000, skin: { name: 'M4A4 | Magnesium', price: 3.50, sellKeys: 80 }, chance: 1.5 }
+};
 
 const FREE_CASES = {
     free_25:  { title: '📦 Кейс «Новичок»', cost: 25,  k1: 5,  k2: 18,  k3: 35,  k4: 55,  skin: { name: 'P250 | Sand Dune', price: 0.25, sellKeys: 6 },   chance: 0.3 },
@@ -28,7 +39,6 @@ const FREE_CASES = {
     free_200: { title: '🔥 Кейс «Тайный»', cost: 200, k1: 55, k2: 150, k3: 270, k4: 430, skin: { name: 'AWP | Neo-Noir', price: 6.00, sellKeys: 130 },   chance: 0.9 },
     free_300: { title: '👑 Кейс «Легендарный»', cost: 300, k1: 85, k2: 230, k3: 400, k4: 650, skin: { name: 'Deagle | Printstream', price: 15.00, sellKeys: 320 }, chance: 1.0 }
 };
-
 const CASES_CONFIG = {
     donate_start: {
         title: '💠 Кейс «Стартовый»', costText: '50 ⭐', currency: 'stars', cost: 50,
@@ -60,6 +70,19 @@ const CASES_CONFIG = {
     }
 };
 
+Object.keys(COIN_CASES).forEach(k => {
+    const cc = COIN_CASES[k];
+    CASES_CONFIG[k] = {
+        title: cc.title, costText: cc.cost.toLocaleString() + ' 🪙', currency: 'coins', cost: cc.cost,
+        items: [
+            { label: cc.c1.toLocaleString() + ' 🪙', chance: '55%', tier: '' },
+            { label: cc.c2.toLocaleString() + ' 🪙', chance: '34%', tier: '' },
+            { label: cc.c3.toLocaleString() + ' 🪙', chance: (11 - cc.chance).toFixed(1) + '%', tier: 'gold' },
+            { label: `${cc.skin.name} ($${cc.skin.price})`, chance: cc.chance + '%', tier: 'red' }
+        ]
+    };
+});
+
 Object.keys(FREE_CASES).forEach(k => {
     const fc = FREE_CASES[k];
     CASES_CONFIG[k] = {
@@ -73,6 +96,7 @@ Object.keys(FREE_CASES).forEach(k => {
         ]
     };
 });
+
 function isAdmin() {
     const uid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? String(tg.initDataUnsafe.user.id) : "";
     return uid !== "" && uid === String(ADMIN_CHAT_ID);
@@ -115,7 +139,6 @@ function copyRefLink() {
     navigator.clipboard.writeText(input.value);
     showToast('Реферальная ссылка скопирована!');
 }
-
 function pushLiveDrop(user, item, rarity = 'pink') {
     const feed = document.getElementById('liveFeed');
     if (!feed) return;
@@ -135,6 +158,7 @@ function initLiveFeed() {
     feed.dataset.empty = '1';
     feed.innerHTML = '<span style="font-size:11px;color:var(--muted);">🔴 Прямой эфир: здесь появятся реальные скины игроков</span>';
 }
+
 function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -226,7 +250,7 @@ function selectCase(caseKey, silent = false) {
     const cfg = CASES_CONFIG[caseKey];
     document.getElementById('activeCaseTitle').innerText = cfg.title;
     document.getElementById('activeCasePrice').innerText = cfg.costText;
-    buildTrack('5 🔑');
+    buildTrack('🎁');
 
     const grid = document.getElementById('caseContents');
     if (grid) {
@@ -250,7 +274,7 @@ function buildTrack(winText) {
     for (let i = 0; i < 35; i++) {
         const div = document.createElement('div');
         let label = (i === 28) ? winText : pool[Math.floor(Math.random() * pool.length)];
-        let isRare = label.includes('$5') || label.includes('$6') || label.includes('$15') || label.includes('$35') || label.includes('$100');
+        let isRare = label.includes('$2') || label.includes('$3') || label.includes('$5') || label.includes('$6') || label.includes('$15') || label.includes('$35') || label.includes('$100');
         let isSkin = label.includes('$');
         div.className = 'r-item' + (isRare ? ' red' : (isSkin ? ' gold' : ''));
         div.innerText = label;
@@ -285,7 +309,10 @@ function spinSelectedCase(isFast = false) {
     if (isSpinning) return;
     const cfg = CASES_CONFIG[currentCase];
 
-    if (cfg.currency === 'keys') {
+    if (cfg.currency === 'coins') {
+        if (state.coins < cfg.cost) return showToast('Нужно ' + cfg.cost.toLocaleString() + ' монет!');
+        state.coins -= cfg.cost;
+    } else if (cfg.currency === 'keys') {
         if (state.keys < cfg.cost) return showToast('Нужно ' + cfg.cost + ' ключей!');
         state.keys -= cfg.cost;
     } else {
@@ -300,9 +327,16 @@ function spinSelectedCase(isFast = false) {
     const roll = Math.random() * 100;
     let winText = '';
     let winKeys = 0;
+    let winCoins = 0;
     let skinObj = null;
 
-    if (FREE_CASES[currentCase]) {
+    if (COIN_CASES[currentCase]) {
+        const cc = COIN_CASES[currentCase];
+        if (roll < 55) { winCoins = cc.c1; winText = winCoins.toLocaleString() + ' 🪙'; }
+        else if (roll < 89) { winCoins = cc.c2; winText = winCoins.toLocaleString() + ' 🪙'; }
+        else if (roll < (100 - cc.chance)) { winCoins = cc.c3; winText = winCoins.toLocaleString() + ' 🪙'; }
+        else { winText = `${cc.skin.name} ($${cc.skin.price})`; skinObj = { ...cc.skin }; }
+    } else if (FREE_CASES[currentCase]) {
         const fc = FREE_CASES[currentCase];
         if (roll < 50) { winKeys = fc.k1; winText = winKeys + ' 🔑'; }
         else if (roll < 85) { winKeys = fc.k2; winText = winKeys + ' 🔑'; }
@@ -345,6 +379,10 @@ function spinSelectedCase(isFast = false) {
             const rType = skinObj.price >= 50 ? 'gold' : (skinObj.price >= 5 ? 'rare' : 'pink');
             pushLiveDrop('@Вы', skinObj.name, rType);
             openWinModal(skinObj);
+        } else if (winCoins > 0) {
+            state.coins += winCoins;
+            showToast('Выпало: ' + winCoins.toLocaleString() + ' 🪙');
+            updateUI();
         } else {
             state.keys += winKeys;
             showToast('Выпало: ' + winKeys + ' 🔑');
@@ -550,8 +588,9 @@ function usePromo() {
     if (code === 'ADMINTEST' && isAdmin()) {
         state.keys += 500;
         state.stars += 1000;
+        state.coins += 500000;
         document.getElementById('promoCode').value = '';
-        showToast('👑 Админ-тест: +500 🔑 и +1000 ⭐!');
+        showToast('👑 Админ-тест: +500 🔑, +1000 ⭐ и +500 000 🪙!');
         updateUI();
         return;
     }
@@ -559,8 +598,8 @@ function usePromo() {
     if (state.usedPromos.includes(code)) return showToast('Ты уже активировал этот промокод!');
 
     const PROMOS = {
-        'WESTYSTART': { keys: 5, coins: 5000 },
-        'STANDOFF2':  { keys: 3, coins: 10000 }
+        'WESTYSTART': { keys: 5, coins: 15000 },
+        'STANDOFF2':  { keys: 3, coins: 25000 }
     };
 
     if (PROMOS[code]) {
@@ -609,14 +648,10 @@ setInterval(() => {
 }, 1000);
 
 let isCloudLoaded = false;
-const API_BASE = "https://pythonanywhere.com";
-let isCloudLoaded = false;
 let saveTimer = null;
 
 function getPlayerId() {
-    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        return String(tg.initDataUnsafe.user.id);
-    }
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) return String(tg.initDataUnsafe.user.id);
     return "guest_777";
 }
 
@@ -624,6 +659,7 @@ function saveProgress() {
     if (!isCloudLoaded) return;
     const raw = JSON.stringify(state);
     try { localStorage.setItem('westyloot_save', raw); } catch (e) {}
+    if (tg && tg.CloudStorage) tg.CloudStorage.setItem('westyloot_save', raw);
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
         fetch(`${API_BASE}/save/${getPlayerId()}`, {
@@ -642,7 +678,7 @@ updateUI = function() {
 
 initLiveFeed();
 initReferrals();
-selectCase('free_25', true);
+selectCase('coin_15k', true);
 
 const savedTrade = localStorage.getItem('westyloot_trade');
 if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('tradeUrl').value = savedTrade;
@@ -650,9 +686,7 @@ if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('
 fetch(`${API_BASE}/load/${getPlayerId()}`)
     .then(r => r.json())
     .then(serverData => {
-        if (serverData && Object.keys(serverData).length > 0) {
-            state = { ...state, ...serverData };
-        }
+        if (serverData && Object.keys(serverData).length > 0) state = { ...state, ...serverData };
         isCloudLoaded = true;
         origUpdateUI();
     })
@@ -664,4 +698,3 @@ fetch(`${API_BASE}/load/${getPlayerId()}`)
         isCloudLoaded = true;
         origUpdateUI();
     });
-
