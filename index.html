@@ -167,3 +167,102 @@
             </div>
         </div>
     </div>
+    <div id="tab-shop" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span id="activeCaseTitle">🪙 Кейс «Медный»</span><span class="badge" id="activeCasePrice">15 000 🪙</span></div>
+            <div class="roulette-wrap"><div class="roulette-line"></div><div class="roulette-track" id="track"></div></div>
+            <div class="spin-row">
+                <button class="btn" onclick="spinSelectedCase(false)">🎰 Крутить</button>
+                <button class="btn btn-purple" style="margin:0;" onclick="spinSelectedCase(true)">⚡ Фаст</button>
+            </div>
+            <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:6px;">📋 Содержимое кейса:</div>
+            <div class="contents-grid" id="caseContents"></div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🪙 Кейсы за монеты</span></div>
+            <div class="shop-grid">
+                <div class="shop-item"><div><div class="shop-item-icon">🥉</div><div class="shop-item-name">Медный</div><div class="shop-item-sub">Скин до $0.10</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_15k')">15 000 🪙</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🥈</div><div class="shop-item-name">Серебряный</div><div class="shop-item-sub">Скин до $0.25</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_50k')">50 000 🪙</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🥇</div><div class="shop-item-name">Золотой</div><div class="shop-item-sub">Скин до $0.50</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_100k')">100 000 🪙</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Платиновый</div><div class="shop-item-sub">Скин до $0.80</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_150k')">150 000 🪙</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">💎</div><div class="shop-item-name">Алмазный</div><div class="shop-item-sub">Скин до $1.20</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_200k')">200 000 🪙</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🔮</div><div class="shop-item-name">Мифический</div><div class="shop-item-sub">Скин до $2.00</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_350k')">350 000 🪙</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">👑</div><div class="shop-item-name">Императорский</div><div class="shop-item-sub">Скин до $3.50</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_500k')">500 000 🪙</button></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>💎 Кейсы за ключи и Stars</span></div>
+            <div class="shop-grid">
+                <div class="shop-item"><div><div class="shop-item-icon">📦</div><div class="shop-item-name">Новичок</div><div class="shop-item-sub">Ключи или P250 ($0.25)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_25')">25 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🎒</div><div class="shop-item-name">Базовый</div><div class="shop-item-sub">Ключи или Glock ($0.50)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_50')">50 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🎖️</div><div class="shop-item-name">Армейский</div><div class="shop-item-sub">Ключи или USP-S ($1)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_75')">75 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🔫</div><div class="shop-item-name">Запрещённый</div><div class="shop-item-sub">Ключи или AK-47 ($2.5)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_100')">100 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🔮</div><div class="shop-item-name">Засекреченный</div><div class="shop-item-sub">Ключи или M4A1-S ($4)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_150')">150 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🔥</div><div class="shop-item-name">Тайный</div><div class="shop-item-sub">Ключи или AWP ($6)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_200')">200 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">👑</div><div class="shop-item-name">Легендарный</div><div class="shop-item-sub">Ключи или Deagle ($15)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_300')">300 🔑</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Стартовый</div><div class="shop-item-sub">Скины $0.20 – $5.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_start')">50 ⭐</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">⚡</div><div class="shop-item-name">Элитный</div><div class="shop-item-sub">Скины $0.60 – $15.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_elite')">150 ⭐</button></div>
+                <div class="shop-item"><div><div class="shop-item-icon">🗡️</div><div class="shop-item-name">Ножевой</div><div class="shop-item-sub">Скины до $100.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_knife')">500 ⭐</button></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🔑 Купить ключи за Stars</span></div>
+            <div class="shop-grid">
+                <div class="shop-item"><div class="shop-item-name">10 ключей</div><div class="shop-item-sub">Базовый набор</div><button class="btn btn-star btn-sm" style="width:100%" onclick="buyKeysPack(10, 15)">15 ⭐</button></div>
+                <div class="shop-item"><div class="shop-item-name">55 ключей</div><div class="shop-item-sub">+5 в подарок</div><button class="btn btn-star btn-sm" style="width:100%" onclick="buyKeysPack(55, 75)">75 ⭐</button></div>
+            </div>
+        </div>
+    </div>
+    <div id="tab-bp" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span>🎡 Колесо Фортуны</span><span class="badge">1 раз в 24ч</span></div>
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-disc" id="wheelDisc">
+                    <div class="w-label" style="transform: rotate(30deg) translateX(-50%);">5 🔑</div>
+                    <div class="w-label" style="transform: rotate(90deg) translateX(-50%);">10 🔑</div>
+                    <div class="w-label" style="transform: rotate(150deg) translateX(-50%);">5 🔑</div>
+                    <div class="w-label" style="transform: rotate(210deg) translateX(-50%);">25 🔑</div>
+                    <div class="w-label" style="transform: rotate(270deg) translateX(-50%);">15 🔑</div>
+                    <div class="w-label" style="transform: rotate(330deg) translateX(-50%); color:#fde047;">СКИН $5</div>
+                </div>
+                <div class="wheel-center">🎯</div>
+            </div>
+            <button class="btn btn-green" id="dailyBtn" onclick="spinDailyWheel()">🎬 Крутить за 1 рекламу</button>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🏆 Season 1: Westy Pass</span><span class="badge star" id="bpStatus">FREE</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;">
+                <span>Уровень: <b id="bpLvl" style="color:var(--accent)">1</b> / 100</span>
+                <span>Кейсы: <b id="bpCases" style="color:#fff">0</b>/200 | Реклама: <b id="bpAds" style="color:#fff">0</b>/50</span>
+            </div>
+            <div class="prog-bg"><div class="prog-fill" id="barBpCases"></div></div>
+            <div class="bp-track" id="bpTrack"></div>
+            <button class="btn btn-star" style="margin-top:10px;" id="buyBpBtn" onclick="buyPremiumBP()">👑 Разблокировать GOLD PASS (350 ⭐)</button>
+        </div>
+    </div>
+
+    <div id="tab-inv" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span>🔗 Твоя Steam Trade URL</span></div>
+            <div class="input-row">
+                <input type="text" id="tradeUrl" class="text-input" placeholder="https://steamcommunity.com...">
+                <button class="btn btn-sm" onclick="saveTradeUrl()">Сохранить</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><span>🎒 Выбитые скины</span><span class="badge" id="invCount">0 шт.</span></div>
+            <div id="invList"><p style="font-size:13px;color:var(--muted);text-align:center;padding:16px 0;">Пока пусто. Открывай кейсы в Магазине!</p></div>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <button class="nav-btn active" onclick="switchTab('home', this)"><span class="nav-icon">🏠</span><span>Главная</span></button>
+        <button class="nav-btn" onclick="switchTab('shop', this)"><span class="nav-icon">🛒</span><span>Магазин</span></button>
+        <button class="nav-btn" onclick="switchTab('bp', this)"><span class="nav-icon">🏆</span><span>БП и Колесо</span></button>
+        <button class="nav-btn" onclick="switchTab('inv', this)"><span class="nav-icon">🎒</span><span>Инвентарь</span></button>
+    </nav>
+
+    <script src="app.js?v=40"></script>
+</body>
+</html>
