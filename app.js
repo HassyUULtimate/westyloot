@@ -127,7 +127,7 @@ function runRewardedAd(onComplete) {
             return showToast('Сервер AdsGram недоступен с твоего интернета/VPN');
         }
         if (!adController) {
-            adController = window.Adsgram.init({ blockId: String(ADSGRAM_BLOCK_ID), debug: true });
+            adController = window.Adsgram.init({ blockId: String(ADSGRAM_BLOCK_ID) });
         }
         adController.show()
             .then(() => {
