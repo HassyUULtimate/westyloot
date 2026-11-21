@@ -671,9 +671,8 @@ setInterval(() => {
 let isCloudLoaded = false;
 let saveTimer = null;
 
-function getPlayerId() {
-    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) return String(tg.initDataUnsafe.user.id);
-    return "guest_777";
+function getInitData() {
+    return (tg && tg.initData) ? tg.initData : "";
 }
 
 function saveProgress() {
@@ -683,10 +682,12 @@ function saveProgress() {
     if (tg && tg.CloudStorage) tg.CloudStorage.setItem('westyloot_save', raw);
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-        fetch(`${API_BASE}/save/${getPlayerId()}`, {
+        const initData = getInitData();
+        if (!initData) return;
+        fetch(`${API_BASE}/secure_save`, {
             method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: raw
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: initData, state: state })
         }).catch(() => {});
     }, 600);
 }
@@ -704,18 +705,25 @@ selectCase('coin_15k', true);
 const savedTrade = localStorage.getItem('westyloot_trade');
 if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('tradeUrl').value = savedTrade;
 
-fetch(`${API_BASE}/load/${getPlayerId()}`)
-    .then(r => r.json())
-    .then(serverData => {
-        if (serverData && Object.keys(serverData).length > 0) state = { ...state, ...serverData };
-        isCloudLoaded = true;
-        origUpdateUI();
+const initDataOnLoad = getInitData();
+if (initDataOnLoad) {
+    fetch(`${API_BASE}/secure_load`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: initDataOnLoad })
     })
-    .catch(() => {
-        try {
-            const localRaw = localStorage.getItem('westyloot_save');
-            if (localRaw) state = { ...state, ...JSON.parse(localRaw) };
-        } catch (e) {}
-        isCloudLoaded = true;
-        origUpdateUI();
-    });
+        .then(r => r.json())
+        .then(serverData => {
+            if (serverData && typeof serverData.coins === 'number') state = { ...state, ...serverData };
+            isCloudLoaded = true;
+            origUpdateUI();
+        })
+        .catch(() => {
+            isCloudLoaded = true;
+            origUpdateUI();
+        });
+} else {
+    isCloudLoaded = true;
+    origUpdateUI();
+}
+
