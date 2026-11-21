@@ -706,6 +706,12 @@ const savedTrade = localStorage.getItem('westyloot_trade');
 if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('tradeUrl').value = savedTrade;
 
 const initDataOnLoad = getInitData();
+let localBackup = null;
+try {
+    const rawLocal = localStorage.getItem('westyloot_save');
+    if (rawLocal) localBackup = JSON.parse(rawLocal);
+} catch (e) {}
+
 if (initDataOnLoad) {
     fetch(`${API_BASE}/secure_load`, {
         method: 'POST',
@@ -714,16 +720,21 @@ if (initDataOnLoad) {
     })
         .then(r => r.json())
         .then(serverData => {
-            if (serverData && typeof serverData.coins === 'number') state = { ...state, ...serverData };
+            if (serverData && (serverData.coins > 0 || serverData.keys > 0 || (serverData.inventory && serverData.inventory.length > 0))) {
+                state = { ...state, ...serverData };
+            } else if (localBackup) {
+                state = { ...state, ...localBackup };
+            }
             isCloudLoaded = true;
-            origUpdateUI();
+            updateUI();
         })
         .catch(() => {
+            if (localBackup) state = { ...state, ...localBackup };
             isCloudLoaded = true;
             origUpdateUI();
         });
 } else {
+    if (localBackup) state = { ...state, ...localBackup };
     isCloudLoaded = true;
     origUpdateUI();
 }
-
