@@ -111,21 +111,33 @@ function showToast(msg) {
 
 let adController = null;
 
-function runRewardedAd(onComplete) {
-    if (!window.Adsgram) {
-        return showToast('Модуль рекламы не загрузился');
-    }
-    if (!adController) {
-        adController = window.Adsgram.init({ blockId: String(ADSGRAM_BLOCK_ID), debug: true });
-    }
-    adController.show()
-        .then(() => {
-            onComplete();
-        })
-        .catch((err) => {
-            showToast('Ошибка AdsGram: ' + JSON.stringify(err));
-        });
+function loadAdsgramScript(cb) {
+    if (window.Adsgram) return cb(true);
+    const s = document.createElement('script');
+    s.src = 'https://adsgram.ai' + Date.now();
+    s.onload = () => cb(true);
+    s.onerror = () => cb(false);
+    document.head.appendChild(s);
 }
+
+function runRewardedAd(onComplete) {
+    loadAdsgramScript((ok) => {
+        if (!ok || !window.Adsgram) {
+            return showToast('Сервер AdsGram недоступен с твоего интернета/VPN');
+        }
+        if (!adController) {
+            adController = window.Adsgram.init({ blockId: String(ADSGRAM_BLOCK_ID), debug: true });
+        }
+        adController.show()
+            .then(() => {
+                onComplete();
+            })
+            .catch((err) => {
+                showToast('Ошибка AdsGram: ' + JSON.stringify(err));
+            });
+    });
+}
+
 
 
 function initReferrals() {
