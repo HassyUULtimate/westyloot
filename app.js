@@ -109,20 +109,24 @@ function showToast(msg) {
     setTimeout(() => { t.style.display = 'none'; }, 2600);
 }
 
+let adController = null;
+
 function runRewardedAd(onComplete) {
     if (!window.Adsgram) {
-        return showToast('Рекламный модуль загружается, попробуй через 3 сек...');
+        return showToast('Модуль рекламы не загрузился');
     }
-    const AdController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
-    AdController.show()
+    if (!adController) {
+        adController = window.Adsgram.init({ blockId: String(ADSGRAM_BLOCK_ID), debug: true });
+    }
+    adController.show()
         .then(() => {
             onComplete();
         })
-             .catch((err) => {
-         showToast('Ошибка AdsGram: ' + JSON.stringify(err));
-     });
-
+        .catch((err) => {
+            showToast('Ошибка AdsGram: ' + JSON.stringify(err));
+        });
 }
+
 
 function initReferrals() {
     const uid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : '777';
