@@ -118,9 +118,10 @@ function runRewardedAd(onComplete) {
         .then(() => {
             onComplete();
         })
-        .catch((err) => {
-            showToast('Реклама недоступна или не досмотрена до конца!');
-        });
+             .catch((err) => {
+         showToast('Ошибка AdsGram: ' + JSON.stringify(err));
+     });
+
 }
 
 function initReferrals() {
