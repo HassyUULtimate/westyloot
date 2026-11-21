@@ -4,7 +4,7 @@ if (tg) tg.expand();
 const ADSGRAM_BLOCK_ID = "60949";
 const BOT_USERNAME = "westyloot_bot";
 const ADMIN_CHAT_ID = "5888218785";
-const API_BASE = "https://pythonanywhere.com";
+const API_BASE = 'https://' + '://pythonanywhere.com' + '/api';
 
 let state = {
     coins: 0, keys: 0, stars: 0,
@@ -114,7 +114,8 @@ let adController = null;
 function loadAdsgramScript(cb) {
     if (window.Adsgram) return cb(true);
     const s = document.createElement('script');
-    s.src = 'https://adsgram.ai' + Date.now();
+    s.src = 'https://' + 'sad.adsgram.ai' + '/js/sad.min.js?t=' + Date.now();
+
     s.onload = () => cb(true);
     s.onerror = () => cb(false);
     document.head.appendChild(s);
