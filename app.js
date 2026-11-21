@@ -677,9 +677,6 @@ function getInitData() {
 
 function saveProgress() {
     if (!isCloudLoaded) return;
-    const raw = JSON.stringify(state);
-    try { localStorage.setItem('westyloot_save', raw); } catch (e) {}
-    if (tg && tg.CloudStorage) tg.CloudStorage.setItem('westyloot_save', raw);
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
         const initData = getInitData();
@@ -688,8 +685,13 @@ function saveProgress() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ initData: initData, state: state })
+        }).then(r => {
+            if (r.status === 403) {
+                showToast('Попытка взлома заблокирована сервером!');
+                setTimeout(() => location.reload(), 1000);
+            }
         }).catch(() => {});
-    }, 600);
+    }, 500);
 }
 
 const origUpdateUI = updateUI;
@@ -706,12 +708,6 @@ const savedTrade = localStorage.getItem('westyloot_trade');
 if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('tradeUrl').value = savedTrade;
 
 const initDataOnLoad = getInitData();
-let localBackup = null;
-try {
-    const rawLocal = localStorage.getItem('westyloot_save');
-    if (rawLocal) localBackup = JSON.parse(rawLocal);
-} catch (e) {}
-
 if (initDataOnLoad) {
     fetch(`${API_BASE}/secure_load`, {
         method: 'POST',
@@ -720,21 +716,17 @@ if (initDataOnLoad) {
     })
         .then(r => r.json())
         .then(serverData => {
-            if (serverData && (serverData.coins > 0 || serverData.keys > 0 || (serverData.inventory && serverData.inventory.length > 0))) {
+            if (serverData && typeof serverData.coins === 'number') {
                 state = { ...state, ...serverData };
-            } else if (localBackup) {
-                state = { ...state, ...localBackup };
             }
             isCloudLoaded = true;
-            updateUI();
+            origUpdateUI();
         })
         .catch(() => {
-            if (localBackup) state = { ...state, ...localBackup };
             isCloudLoaded = true;
             origUpdateUI();
         });
 } else {
-    if (localBackup) state = { ...state, ...localBackup };
     isCloudLoaded = true;
     origUpdateUI();
 }
