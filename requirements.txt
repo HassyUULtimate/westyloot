@@ -1,6 +1,5 @@
+aiogram>=3.13.0
 fastapi
 uvicorn
-aiogram
-aiosqlite
-pydantic
+psycopg2-binary
 python-dotenv
