@@ -110,3 +110,6 @@ def get_leaderboard():
             pass
     players.sort(key=lambda x: x["ads"], reverse=True)
     return {"top": players[:10]}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=80)
