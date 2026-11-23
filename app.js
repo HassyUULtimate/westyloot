@@ -4,7 +4,7 @@ if (tg) tg.expand();
 const ADSGRAM_BLOCK_ID = "60949";
 const BOT_USERNAME = "westyloot_bot";
 const ADMIN_CHAT_ID = "5888218785";
-const API_BASE = 'https://hassyuulltimate' + '.pythonanywhere.com' + '/api';
+const API_BASE = 'https://' + 'westyloot.l8153766' + '.workers.dev/api';
 
 let state = {
     coins: 0, keys: 0, stars: 0,
