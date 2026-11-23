@@ -264,5 +264,90 @@
     </nav>
 
     <script src="app.js?v=70"></script>
+    <!-- Кнопка Лидерборда Топ-10 -->
+<button id="lbBtn" onclick="openLeaderboard()" style="position:fixed; top:14px; right:14px; z-index:9998; background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; border:none; border-radius:12px; padding:8px 12px; font-weight:700; font-size:13px; box-shadow:0 4px 12px rgba(0,0,0,0.4); cursor:pointer;">
+  🏆 Топ-10
+</button>
+
+<!-- Модальное окно ленты Лидерборда -->
+<div id="lbModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.82); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#18181b; border:1px solid #3f3f46; border-radius:20px; width:100%; max-width:380px; padding:18px; color:#fff; font-family:sans-serif;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="margin:0; font-size:18px;">🏆 Топ-10 по рекламе</h3>
+      <button onclick="document.getElementById('lbModal').style.display='none'" style="background:#27272a; color:#fff; border:none; border-radius:8px; padding:4px 10px; font-size:16px;">✕</button>
+    </div>
+    <div id="lbList" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+      <div style="text-align:center; color:#a1a1aa; padding:20px;">Загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const WORKER_URL = "https://" + "westyloot.l8153766" + ".workers.dev";
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const initData = tg ? tg.initData : "";
+  const tgUser = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+
+  // Загрузка прогресса с сервера при старте
+  if (initData) {
+    fetch(WORKER_URL + "/api/secure_load", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData })
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(serverState => {
+      if (serverState && typeof state === "object") {
+        Object.assign(state, serverState);
+        if (typeof updateUI === "function") updateUI();
+      }
+    }).catch(() => {});
+  }
+
+  // Автосохранение прогресса на сервер каждые 8 секунд
+  setInterval(() => {
+    if (!initData || typeof state !== "object") return;
+    const payload = {
+      ...state,
+      userName: tgUser ? (tgUser.first_name || tgUser.username || "Игрок") : "Игрок"
+    };
+    fetch(WORKER_URL + "/api/secure_save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData, state: payload })
+    }).catch(() => {});
+  }, 8000);
+
+  // Открытие ленты Топ-10
+  window.openLeaderboard = async function() {
+    const modal = document.getElementById("lbModal");
+    const list = document.getElementById("lbList");
+    modal.style.display = "flex";
+    list.innerHTML = '<div style="text-align:center; color:#a1a1aa; padding:20px;">Загрузка рейтинга...</div>';
+    try {
+      const res = await fetch(WORKER_URL + "/api/leaderboard");
+      const data = await res.json();
+      const top = data.top || [];
+      if (!top.length) {
+        list.innerHTML = '<div style="text-align:center; color:#a1a1aa; padding:20px;">Пока никого нет — стань первым!</div>';
+        return;
+      }
+      list.innerHTML = top.map((p, i) => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#27272a; padding:10px 12px; border-radius:12px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-weight:800; color:${i === 0 ? '#facc15' : i === 1 ? '#e4e4e7' : i === 2 ? '#d97706' : '#71717a'};">#${i + 1}</span>
+            <span style="font-weight:600;">${p.name}</span>
+          </div>
+          <span style="background:#3f3f46; padding:4px 8px; border-radius:8px; font-size:12px; font-weight:700;">🎬 ${p.ads}</span>
+        </div>
+      `).join("");
+    } catch (e) {
+      list.innerHTML = '<div style="text-align:center; color:#f87171; padding:20px;">Ошибка загрузки</div>';
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
