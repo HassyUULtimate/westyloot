@@ -3,10 +3,10 @@ import hashlib
 import hmac
 import json
 import os
+import sqlite3
 from contextlib import asynccontextmanager
 from urllib.parse import parse_qsl
 
-import psycopg2
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -14,37 +14,29 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-WEBAPP_URL = os.getenv("WEBAPP_URL", "https://github.io")
+WEBAPP_URL = os.getenv("WEBAPP_URL", "")
+DB_NAME = "/data/game.db" if os.path.exists("/data") else "game.db"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-def get_conn():
-    return psycopg2.connect(DATABASE_URL)
-
 def init_db():
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("CREATE TABLE IF NOT EXISTS user_states (uid TEXT PRIMARY KEY, data TEXT)")
-        conn.commit()
+    conn = sqlite3.connect(DB_NAME)
+    conn.execute("CREATE TABLE IF NOT EXISTS user_states (uid TEXT PRIMARY KEY, data TEXT)")
+    conn.commit()
+    conn.close()
 
 def get_user_state(uid: str) -> dict:
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT data FROM user_states WHERE uid = %s", (uid,))
-            row = cur.fetchone()
-            return json.loads(row) if row else {"coins": 0, "keys": 0, "stars": 0, "adsWeek": 0, "adsMonth": 0}
+    conn = sqlite3.connect(DB_NAME)
+    row = conn.execute("SELECT data FROM user_states WHERE uid = ?", (uid,)).fetchone()
+    conn.close()
+    return json.loads(row) if row else {"coins": 0, "keys": 0, "stars": 0, "adsWeek": 0, "adsMonth": 0}
 
 def save_user_state(uid: str, st: dict):
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO user_states (uid, data) VALUES (%s, %s) "
-                "ON CONFLICT (uid) DO UPDATE SET data = EXCLUDED.data",
-                (uid, json.dumps(st)),
-            )
-        conn.commit()
+    conn = sqlite3.connect(DB_NAME)
+    conn.execute("INSERT OR REPLACE INTO user_states (uid, data) VALUES (?, ?)", (uid, json.dumps(st)))
+    conn.commit()
+    conn.close()
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
@@ -103,10 +95,9 @@ async def secure_save(request: Request):
 
 @app.get("/api/leaderboard")
 def get_leaderboard():
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT uid, data FROM user_states")
-            rows = cur.fetchall()
+    conn = sqlite3.connect(DB_NAME)
+    rows = conn.execute("SELECT uid, data FROM user_states").fetchall()
+    conn.close()
     players = []
     for uid, raw in rows:
         try:
