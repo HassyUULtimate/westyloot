@@ -13,11 +13,10 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-WEBAPP_URL = os.getenv("WEBAPP_URL", "")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
+WEBAPP_URL = os.getenv("WEBAPP_URL", "").strip()
 DB_NAME = "/data/game.db" if os.path.exists("/data") else "game.db"
 
-bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 def init_db():
@@ -48,10 +47,17 @@ async def cmd_start(message: types.Message):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    await bot.delete_webhook(drop_pending_updates=True)
-    task = asyncio.create_task(dp.start_polling(bot))
+    task = None
+    if BOT_TOKEN:
+        bot = Bot(token=BOT_TOKEN)
+        await bot.delete_webhook(drop_pending_updates=True)
+        task = asyncio.create_task(dp.start_polling(bot))
+        print("BOT STARTED SUCCESSFULLY", flush=True)
+    else:
+        print("WARNING: BOT_TOKEN IS EMPTY!", flush=True)
     yield
-    task.cancel()
+    if task:
+        task.cancel()
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -71,7 +77,7 @@ def verify_telegram_data(init_data: str) -> dict:
 
 @app.get("/")
 def root():
-    return {"status": "ok"}
+    return {"status": "ok", "bot_configured": bool(BOT_TOKEN)}
 
 @app.post("/api/secure_load")
 async def secure_load(request: Request):
@@ -110,6 +116,3 @@ def get_leaderboard():
             pass
     players.sort(key=lambda x: x["ads"], reverse=True)
     return {"top": players[:10]}
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=80)
