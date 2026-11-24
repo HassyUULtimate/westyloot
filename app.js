@@ -730,3 +730,83 @@ if (initDataOnLoad) {
     isCloudLoaded = true;
     origUpdateUI();
 }
+function makeCoinCase(t, cost, c, s) {
+  const pts = [], sum = c[1]+c[3]+c[5]+c[7] + s.reduce((a, b) => a + b.chance, 0);
+  for (let i = 0; i < 8; i += 2) pts.push({ label: c[i].toLocaleString()+' 🪙', coins: c[i], chanceNum: c[i+1]/sum*100, chance: (c[i+1]/sum*100).toFixed(1)+'%', tier: i>=4?'gold':'' });
+  s.forEach(x => pts.push({ label: `${x.name} ($${x.price})`, skin: x, chanceNum: x.chance/sum*100, chance: (x.chance/sum*100).toFixed(1)+'%', tier: x.price>=1?'red':'gold' }));
+  return { title: t, costText: cost.toLocaleString() + ' 🪙', currency: 'coins', cost, items: pts };
+}
+function makeKeyCase(t, cost, k, s) {
+  const pts = [], sum = k[1]+k[3]+k[5]+k[7] + s.reduce((a, b) => a + b.chance, 0);
+  for (let i = 0; i < 8; i += 2) pts.push({ label: k[i]+' 🔑', keys: k[i], chanceNum: k[i+1]/sum*100, chance: (k[i+1]/sum*100).toFixed(1)+'%', tier: i>=4?'gold':'' });
+  s.forEach(x => pts.push({ label: `${x.name} ($${x.price})`, skin: x, chanceNum: x.chance/sum*100, chance: (x.chance/sum*100).toFixed(1)+'%', tier: x.price>=1?'red':'gold' }));
+  return { title: t, costText: cost + ' 🔑', currency: 'keys', cost, items: pts };
+}
+function openWinModal(s) {
+  lastWonSkin = s;
+  const st = s.sellStars || Math.max(5, Math.round(s.price * 40));
+  document.getElementById('modalIcon').innerText = s.name.includes('Нож') ? '🗡' : '🔫';
+  document.getElementById('modalTitle').innerText = s.name;
+  document.getElementById('modalPrice').innerText = `$${s.price.toFixed(2)} (или ${st} ⭐)`;
+  document.getElementById('modalSellBtn').innerHTML = `💰 +${s.sellKeys} 🔑 &nbsp;|&nbsp; <span onclick="event.stopPropagation();sellWonForStars()">⭐ +${st} Stars</span>`;
+  document.getElementById('winModal').style.display = 'flex';
+}
+function sellWonForStars() {
+  if (!lastWonSkin) return;
+  const st = lastWonSkin.sellStars || Math.max(5, Math.round(lastWonSkin.price * 40));
+  state.stars += st; lastWonSkin = null;
+  document.getElementById('winModal').style.display = 'none';
+  showToast(`Продано за +${st} ⭐!`); updateUI();
+}
+async function withdrawStarsToTg() {
+  const amt = Math.floor(Number(prompt('Сколько Stars вывести в Telegram? (мин. 50 ⭐)', state.stars) || 0));
+  if (amt < 50 || state.stars < amt) return showToast('Минимум 50 ⭐ или не хватает баланса!');
+  const res = await fetch(`${API_BASE}/withdraw_stars`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initData: getInitData(), amount: amt, adminId: ADMIN_CHAT_ID })
+  });
+  const d = await res.json();
+  if (!res.ok) return showToast(d.error || 'Ошибка вывода');
+  state.stars = d.stars; showToast(`✅ Заявка на ${amt} ⭐ отправлена админу!`); updateUI();
+}
+const origRenderInv = renderInventory;
+renderInventory = function() {
+  origRenderInv();
+  const list = document.getElementById('invList');
+  if (list && !document.getElementById('wdStarsBtn')) {
+    list.insertAdjacentHTML('beforebegin', `<button id="wdStarsBtn" class="btn btn-green" style="margin-bottom:10px;" onclick="withdrawStarsToTg()">⭐ Вывести Stars в Telegram (${state.stars} ⭐)</button>`);
+  } else if (document.getElementById('wdStarsBtn')) {
+    document.getElementById('wdStarsBtn').innerText = `⭐ Вывести Stars в Telegram (${state.stars} ⭐)`;
+  }
+};
+spinSelectedCase = function(isFast = false) {
+  if (isSpinning) return;
+  const cfg = CASES_CONFIG[currentCase];
+  if (cfg.currency === 'guarant') {
+    if (state.coins < 300000 || state.keys < 65) return showToast('Нужно 300 000 🪙 и 65 🔑!');
+    state.coins -= 300000; state.keys -= 65;
+  } else if (cfg.currency === 'coins') {
+    if (state.coins < cfg.cost) return showToast('Нужно ' + cfg.cost.toLocaleString() + ' 🪙!');
+    state.coins -= cfg.cost;
+  } else if (cfg.currency === 'keys') {
+    if (state.keys < cfg.cost) return showToast('Нужно ' + cfg.cost + ' 🔑!');
+    state.keys -= cfg.cost;
+  } else {
+    if (state.stars < cfg.cost) return showToast('Недостаточно Stars!');
+    state.stars -= cfg.cost;
+  }
+  isSpinning = true; state.casesOpened += 1; updateUI();
+  const skins = cfg.items.filter(x => x.skin);
+  let chosen = cfg.items[0], r = Math.random() * 100, acc = 0;
+  for (const it of cfg.items) { acc += (it.chanceNum || parseFloat(it.chance)); if (r <= acc) { chosen = it; break; } }
+  if (state.casesOpened === 2 && skins.length) chosen = skins[0];
+  buildTrack(chosen.label);
+  const track = document.getElementById('track'), off = (28 * 94) + 47 - (track.parentElement.offsetWidth / 2), dur = isFast ? 350 : 3500;
+  setTimeout(() => { track.style.transition = `transform ${dur}ms cubic-bezier(0.15,0.85,0.25,1)`; track.style.transform = `translateX(-${off}px)`; }, 30);
+  setTimeout(() => {
+    isSpinning = false;
+    if (chosen.skin) { pushLiveDrop('@Вы', chosen.skin.name, chosen.skin.price >= 5 ? 'rare' : 'pink'); openWinModal(chosen.skin); }
+    else if (chosen.coins) { state.coins += chosen.coins; showToast('Выпало: ' + chosen.coins.toLocaleString() + ' 🪙'); updateUI(); }
+    else { state.keys += (chosen.keys || 1); showToast('Выпало: ' + (chosen.keys || 1) + ' 🔑'); updateUI(); }
+  }, dur + 120);
+};
