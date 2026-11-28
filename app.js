@@ -7,806 +7,292 @@ const ADMIN_CHAT_ID = "5888218785";
 const API_BASE = 'https://' + 'westyloot.l8153766' + '.workers.dev/api';
 
 let state = {
-    coins: 0, keys: 0, stars: 0,
-    adsWeek: 0, adsMonth: 0, casesOpened: 0,
-    bpPremium: false, dailyUsed: false,
-    referrals: 0, refClaimed: false,
-    acAdProgress: 0, acSpeed: 2, acEndTime: 0, acLastTick: 0,
-    usedPromos: [], inventory: [], claimedBp: []
+  coins: 0, keys: 0, stars: 0, adsWeek: 0, adsMonth: 0, casesOpened: 0,
+  dailyUsed: false, refClaimed: false, acAdProgress: 0, acEndTime: 0,
+  tradeUrl: '', usedPromos: [], inventory: []
 };
-
-let currentCase = 'coin_15k';
-let isSpinning = false;
-let wheelDeg = 0;
-let lastWonSkin = null;
-
-const COIN_CASES = {
-    coin_15k:  { title: '🥉 Кейс «Медный»', cost: 15000,  c1: 4000,   c2: 11000,  c3: 22000,  skin: { name: 'MP9 | Sand Dashed', price: 0.10, sellKeys: 3 },   chance: 0.5 },
-    coin_50k:  { title: '🥈 Кейс «Серебряный»', cost: 50000, c1: 14000,  c2: 38000,  c3: 75000,  skin: { name: 'P250 | Sand Dune', price: 0.25, sellKeys: 6 },    chance: 0.6 },
-    coin_100k: { title: '🥇 Кейс «Золотой»', cost: 100000, c1: 28000,  c2: 75000,  c3: 150000, skin: { name: 'Glock-18 | Oxide', price: 0.50, sellKeys: 12 },   chance: 0.7 },
-    coin_150k: { title: '💠 Кейс «Платиновый»', cost: 150000, c1: 42000, c2: 115000, c3: 225000, skin: { name: 'USP-S | Ticket to Hell', price: 0.80, sellKeys: 20 }, chance: 0.8 },
-    coin_200k: { title: '💎 Кейс «Алмазный»', cost: 200000, c1: 55000,  c2: 150000, c3: 300000, skin: { name: 'AK-47 | Safari Mesh', price: 1.20, sellKeys: 28 }, chance: 1.0 },
-    coin_350k: { title: '🔮 Кейс «Мифический»', cost: 350000, c1: 95000, c2: 265000, c3: 525000, skin: { name: 'AWP | Atheris', price: 2.00, sellKeys: 45 },       chance: 1.2 },
-    coin_500k: { title: '👑 Кейс «Императорский»', cost: 500000, c1: 140000, c2: 380000, c3: 750000, skin: { name: 'M4A4 | Magnesium', price: 3.50, sellKeys: 80 }, chance: 1.5 }
-};
-
-const FREE_CASES = {
-    free_25:  { title: '📦 Кейс «Новичок»', cost: 25,  k1: 5,  k2: 18,  k3: 35,  k4: 55,  skin: { name: 'P250 | Sand Dune', price: 0.25, sellKeys: 6 },   chance: 0.3 },
-    free_50:  { title: '🎒 Кейс «Базовый»', cost: 50,  k1: 12, k2: 38,  k3: 63,  k4: 100, skin: { name: 'Glock-18 | Oxide', price: 0.50, sellKeys: 12 },  chance: 0.5 },
-    free_75:  { title: '🎖️ Кейс «Армейский»', cost: 75, k1: 20, k2: 55,  k3: 95,  k4: 150, skin: { name: 'USP-S | Ticket to Hell', price: 1.00, sellKeys: 24 }, chance: 0.6 },
-    free_100: { title: '🔫 Кейс «Запрещённый»', cost: 100, k1: 25, k2: 75,  k3: 130, k4: 210, skin: { name: 'AK-47 | Slate', price: 2.50, sellKeys: 55 },   chance: 0.7 },
-    free_150: { title: '🔮 Кейс «Засекреченный»', cost: 150, k1: 40, k2: 115, k3: 200, k4: 320, skin: { name: 'M4A1-S | Decimator', price: 4.00, sellKeys: 90 }, chance: 0.8 },
-    free_200: { title: '🔥 Кейс «Тайный»', cost: 200, k1: 55, k2: 150, k3: 270, k4: 430, skin: { name: 'AWP | Neo-Noir', price: 6.00, sellKeys: 130 },   chance: 0.9 },
-    free_300: { title: '👑 Кейс «Легендарный»', cost: 300, k1: 85, k2: 230, k3: 400, k4: 650, skin: { name: 'Deagle | Printstream', price: 15.00, sellKeys: 320 }, chance: 1.0 }
-};
-const CASES_CONFIG = {
-    donate_start: {
-        title: '💠 Кейс «Стартовый»', costText: '50 ⭐', currency: 'stars', cost: 50,
-        items: [
-            { label: 'P250 | Sand Dune ($0.20)', chance: '70%', tier: '' },
-            { label: 'Glock-18 | Oxide ($0.45)', chance: '25%', tier: '' },
-            { label: 'M4A4 | Magnesium ($1.50)', chance: '4.5%', tier: 'gold' },
-            { label: 'USP-S | Cortex ($5.00)', chance: '0.5%', tier: 'red' }
-        ]
-    },
-    donate_elite: {
-        title: '⚡ Кейс «Элитный»', costText: '150 ⭐', currency: 'stars', cost: 150,
-        items: [
-            { label: 'AWP | Atheris ($0.65)', chance: '65%', tier: '' },
-            { label: 'AK-47 | Ice Coaled ($1.70)', chance: '28%', tier: 'gold' },
-            { label: 'M4A1-S | Decimator ($4.00)', chance: '6%', tier: 'gold' },
-            { label: 'Deagle | Printstream ($15.00)', chance: '1%', tier: 'red' }
-        ]
-    },
-    donate_knife: {
-        title: '🗡️ Кейс «Ножевой»', costText: '500 ⭐', currency: 'stars', cost: 500,
-        items: [
-            { label: 'AK-47 | Redline ($1.80)', chance: '70%', tier: '' },
-            { label: 'AWP | Neo-Noir ($5.00)', chance: '22%', tier: 'gold' },
-            { label: 'M4A1-S | Hyper Beast ($12)', chance: '7%', tier: 'red' },
-            { label: 'AWP | Asiimov ($35.00)', chance: '0.9%', tier: 'red' },
-            { label: '★ Нож-бабочка ($100.00)', chance: '0.1%', tier: 'red' }
-        ]
-    }
-};
-
-Object.keys(COIN_CASES).forEach(k => {
-    const cc = COIN_CASES[k];
-    CASES_CONFIG[k] = {
-        title: cc.title, costText: cc.cost.toLocaleString() + ' 🪙', currency: 'coins', cost: cc.cost,
-        items: [
-            { label: cc.c1.toLocaleString() + ' 🪙', chance: '55%', tier: '' },
-            { label: cc.c2.toLocaleString() + ' 🪙', chance: '34%', tier: '' },
-            { label: cc.c3.toLocaleString() + ' 🪙', chance: (11 - cc.chance).toFixed(1) + '%', tier: 'gold' },
-            { label: `${cc.skin.name} ($${cc.skin.price})`, chance: cc.chance + '%', tier: 'red' }
-        ]
-    };
-});
-
-Object.keys(FREE_CASES).forEach(k => {
-    const fc = FREE_CASES[k];
-    CASES_CONFIG[k] = {
-        title: fc.title, costText: fc.cost + ' 🔑', currency: 'keys', cost: fc.cost,
-        items: [
-            { label: fc.k1 + ' 🔑', chance: '50%', tier: '' },
-            { label: fc.k2 + ' 🔑', chance: '35%', tier: '' },
-            { label: fc.k3 + ' 🔑', chance: '10%', tier: 'gold' },
-            { label: fc.k4 + ' 🔑', chance: (5 - fc.chance).toFixed(1) + '%', tier: 'gold' },
-            { label: `${fc.skin.name} ($${fc.skin.price})`, chance: fc.chance + '%', tier: 'red' }
-        ]
-    };
-});
-
-function isAdmin() {
-    const uid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? String(tg.initDataUnsafe.user.id) : "";
-    return uid !== "" && uid === String(ADMIN_CHAT_ID);
-}
+let currentCase = 'coin_15k', isSpinning = false, lastWonSkin = null, adCtrl = null, acSaveTick = 0;
 
 function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.style.display = 'block';
-    setTimeout(() => { t.style.display = 'none'; }, 2600);
-}
-
-let adController = null;
-
-function loadAdsgramScript(cb) {
-    if (window.Adsgram) return cb(true);
-    const s = document.createElement('script');
-    s.src = 'https://' + 'sad.adsgram.ai' + '/js/sad.min.js?t=' + Date.now();
-
-    s.onload = () => cb(true);
-    s.onerror = () => cb(false);
-    document.head.appendChild(s);
-}
-
-function runRewardedAd(onComplete) {
-    loadAdsgramScript((ok) => {
-        if (!ok || !window.Adsgram) {
-            return showToast('Сервер AdsGram недоступен с твоего интернета/VPN');
-        }
-        if (!adController) {
-            adController = window.Adsgram.init({ blockId: String(ADSGRAM_BLOCK_ID) });
-        }
-        adController.show()
-            .then(() => {
-                onComplete();
-            })
-            .catch((err) => {
-                showToast('Ошибка AdsGram: ' + JSON.stringify(err));
-            });
-    });
-}
-
-
-
-function initReferrals() {
-    const uid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : '777';
-    const inp = document.getElementById('refLinkInput');
-    if (inp) inp.value = `https://t.me{BOT_USERNAME}?start=ref_${uid}`;
-
-    const startParam = (tg && tg.initDataUnsafe) ? tg.initDataUnsafe.start_param : '';
-    if (startParam && startParam.startsWith('ref_') && !state.refClaimed) {
-        state.refClaimed = true;
-        state.keys += 3;
-        showToast('🎁 Бонус по ссылке друга: +3 🔑!');
-    }
-}
-
-function copyRefLink() {
-    const input = document.getElementById('refLinkInput');
-    input.select();
-    navigator.clipboard.writeText(input.value);
-    showToast('Реферальная ссылка скопирована!');
-}
-function pushLiveDrop(user, item, rarity = 'pink') {
-    const feed = document.getElementById('liveFeed');
-    if (!feed) return;
-    if (feed.dataset.empty === '1') { feed.innerHTML = ''; feed.dataset.empty = '0'; }
-    const chip = document.createElement('div');
-    const rClass = rarity === true ? 'rare' : (rarity || '');
-    chip.className = 'live-chip ' + rClass;
-    const icon = item.includes('Нож') ? '🗡️' : (item.includes('AWP') ? '🎯' : '🔫');
-    chip.innerHTML = `<div class="live-skin">${icon} ${item}</div><div class="live-user">${user}</div>`;
-    feed.prepend(chip);
-    if (feed.children.length > 5) feed.lastChild.remove();
-}
-
-function initLiveFeed() {
-    const feed = document.getElementById('liveFeed');
-    if (!feed) return;
-    feed.dataset.empty = '1';
-    feed.innerHTML = '<span style="font-size:11px;color:var(--muted);">🔴 Прямой эфир: здесь появятся реальные скины игроков</span>';
-}
-
-function switchTab(tabId, btn) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-' + tabId).classList.add('active');
-    btn.classList.add('active');
-    if (tabId === 'shop') selectCase(currentCase, true);
-    if (tabId === 'bp') renderBattlePass();
-}
-
-function getCurrentBpLevel() {
-    const lvlByCases = Math.floor((state.casesOpened / 200) * 100);
-    const lvlByAds = Math.floor((state.adsMonth / 50) * 100);
-    return Math.min(100, Math.max(1, Math.min(lvlByCases, lvlByAds) + 1));
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.innerText = msg; t.style.display = 'block';
+  clearTimeout(t._tm); t._tm = setTimeout(() => { t.style.display = 'none'; }, 2500);
 }
 
 function updateUI() {
-    document.getElementById('coins').innerText = Math.floor(state.coins).toLocaleString();
-    document.getElementById('keys').innerText = state.keys;
-    document.getElementById('stars').innerText = state.stars + ' ⭐';
-    document.getElementById('refCount').innerText = state.referrals + ' друзей';
-    document.getElementById('adsWeek').innerText = state.adsWeek;
-    document.getElementById('adsMonth').innerText = state.adsMonth;
-    document.getElementById('barWeek').style.width = Math.min(100, (state.adsWeek / 50) * 100) + '%';
-    document.getElementById('barMonth').style.width = Math.min(100, (state.adsMonth / 250) * 100) + '%';
-
-    document.getElementById('bpLvl').innerText = getCurrentBpLevel();
-    document.getElementById('bpCases').innerText = state.casesOpened;
-    document.getElementById('bpAds').innerText = Math.min(50, state.adsMonth);
-    document.getElementById('barBpCases').style.width = Math.min(100, (state.casesOpened / 200) * 100) + '%';
-
-    renderBattlePass();
-    renderInventory();
+  document.getElementById('balCoins').innerText = Math.floor(state.coins).toLocaleString();
+  document.getElementById('balKeys').innerText = Math.floor(state.keys).toLocaleString();
+  document.getElementById('balStars').innerText = Math.floor(state.stars).toLocaleString();
+  const acBtn = document.getElementById('acWatchBtn');
+  if (acBtn) acBtn.innerText = `🎬 Автокликер (2 кл/с на 1ч): ${state.acAdProgress} / 5 реклам`;
+  renderInventory();
 }
 
-function tapCoin() {
-    showToast('Ручной клик отключён — запусти автокликер ниже!');
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+function mkCase(title, cur, cost, mult, skins) {
+  const c = [0.25, 0.6, 1.1, 1.6].map(m => Math.round(cost * m));
+  const w =;
+  const items = c.map((v, i) => ({
+    label: v.toLocaleString() + (cur === 'coins' ? ' 🪙' : ' 🔑'),
+    val: v, valCur: cur, chance: w[i], tier: i >= 2 ? 'gold' : ''
+  }));
+  skins.forEach(([name, price, sk, ss, ch]) => items.push({
+    label: `${name} ($${price})`, chance: ch, tier: price >= 1.5 ? 'red' : 'gold',
+    skin: { name, price, sellKeys: sk, sellStars: ss }
+  }));
+  return { title, currency: cur, cost, costText: cost.toLocaleString() + (cur === 'coins' ? ' 🪙' : cur === 'keys' ? ' 🔑' : ' ⭐'), items };
 }
 
-function exchangeKey() {
-    if (state.coins < 8500) return showToast('Нужно 8 500 монет!');
-    state.coins -= 8500;
-    state.keys += 1;
-    showToast('Обменяли 8 500 монет на 1 ключ!');
-    updateUI();
-}
-
-function watchAd() {
-    runRewardedAd(() => {
-        const won = Math.random() < 0.35 ? 2 : 1;
-        state.keys += won;
-        state.adsWeek += 1;
-        state.adsMonth += 1;
-        showToast('Реклама просмотрена! +' + won + ' 🔑');
-        updateUI();
-    });
-}
-
-function stepFreeAutoClicker() {
-    if (state.acEndTime && state.acEndTime > Date.now()) return showToast('Автокликер уже запущен!');
-    runRewardedAd(() => {
-        state.acAdProgress = (state.acAdProgress || 0) + 1;
-        state.adsWeek += 1;
-        state.adsMonth += 1;
-        if (state.acAdProgress >= 5) {
-            state.acAdProgress = 0;
-            state.acSpeed = 2;
-            state.acEndTime = Date.now() + 3600 * 1000;
-            state.acLastTick = Date.now();
-            showToast('🤖 Автокликер (2 кл/с) запущен на 1 час!');
-        } else {
-            showToast(`Прогресс автокликера: ${state.acAdProgress} / 5 реклам`);
-        }
-        updateUI();
-    });
-}
-
-function buyVipAutoClicker() {
-    if (state.stars < 100) return showToast('Нужно 100 ⭐!');
-    state.stars -= 100;
-    state.acSpeed = 5;
-    state.acEndTime = Date.now() + 5 * 3600 * 1000;
-    state.acLastTick = Date.now();
-    showToast('⚡ VIP Автокликер (5 кл/с) запущен на 5 часов!');
-    updateUI();
-}
-function selectCase(caseKey, silent = false) {
-    if (isSpinning) return;
-    currentCase = caseKey;
-    const cfg = CASES_CONFIG[caseKey];
-    document.getElementById('activeCaseTitle').innerText = cfg.title;
-    document.getElementById('activeCasePrice').innerText = cfg.costText;
-    buildTrack('🎁');
-
-    const grid = document.getElementById('caseContents');
-    if (grid) {
-        grid.innerHTML = cfg.items.map(it => `
-            <div class="c-chip ${it.tier}">
-                <div class="c-name">${it.label}</div>
-                <div class="c-chance">${it.chance}</div>
-            </div>
-        `).join('');
-    }
-    if (!silent) showToast('Выбран: ' + cfg.title);
-}
-
-function buildTrack(winText) {
-    const track = document.getElementById('track');
-    track.style.transition = 'none';
-    track.style.transform = 'translateX(0px)';
-    track.innerHTML = '';
-
-    const pool = CASES_CONFIG[currentCase].items.map(i => i.label);
-    for (let i = 0; i < 35; i++) {
-        const div = document.createElement('div');
-        let label = (i === 28) ? winText : pool[Math.floor(Math.random() * pool.length)];
-        let isRare = label.includes('$2') || label.includes('$3') || label.includes('$5') || label.includes('$6') || label.includes('$15') || label.includes('$35') || label.includes('$100');
-        let isSkin = label.includes('$');
-        div.className = 'r-item' + (isRare ? ' red' : (isSkin ? ' gold' : ''));
-        div.innerText = label;
-        track.appendChild(div);
-    }
-}
-
-function openWinModal(skinObj) {
-    lastWonSkin = skinObj;
-    document.getElementById('modalIcon').innerText = skinObj.name.includes('Нож') ? '🗡️' : '🔫';
-    document.getElementById('modalTitle').innerText = skinObj.name;
-    document.getElementById('modalPrice').innerText = '$' + skinObj.price.toFixed(2);
-    document.getElementById('modalSellBtn').innerText = `💰 Продать за +${skinObj.sellKeys} 🔑`;
-    document.getElementById('winModal').style.display = 'flex';
-}
-
-function closeWinModal(sellImmediately) {
-    document.getElementById('winModal').style.display = 'none';
-    if (!lastWonSkin) return;
-    if (sellImmediately) {
-        state.keys += lastWonSkin.sellKeys;
-        showToast(`Продано за +${lastWonSkin.sellKeys} 🔑!`);
-    } else {
-        state.inventory.push(lastWonSkin);
-        showToast('Скин добавлен в инвентарь!');
-    }
-    lastWonSkin = null;
-    updateUI();
-}
-
-function spinSelectedCase(isFast = false) {
-    if (isSpinning) return;
-    const cfg = CASES_CONFIG[currentCase];
-
-    if (cfg.currency === 'coins') {
-        if (state.coins < cfg.cost) return showToast('Нужно ' + cfg.cost.toLocaleString() + ' монет!');
-        state.coins -= cfg.cost;
-    } else if (cfg.currency === 'keys') {
-        if (state.keys < cfg.cost) return showToast('Нужно ' + cfg.cost + ' ключей!');
-        state.keys -= cfg.cost;
-    } else {
-        if (state.stars < cfg.cost) return showToast('Недостаточно Stars!');
-        state.stars -= cfg.cost;
-    }
-
-    isSpinning = true;
-    state.casesOpened += 1;
-    updateUI();
-
-    const roll = Math.random() * 100;
-    let winText = '';
-    let winKeys = 0;
-    let winCoins = 0;
-    let skinObj = null;
-
-    if (COIN_CASES[currentCase]) {
-        const cc = COIN_CASES[currentCase];
-        if (roll < 55) { winCoins = cc.c1; winText = winCoins.toLocaleString() + ' 🪙'; }
-        else if (roll < 89) { winCoins = cc.c2; winText = winCoins.toLocaleString() + ' 🪙'; }
-        else if (roll < (100 - cc.chance)) { winCoins = cc.c3; winText = winCoins.toLocaleString() + ' 🪙'; }
-        else { winText = `${cc.skin.name} ($${cc.skin.price})`; skinObj = { ...cc.skin }; }
-    } else if (FREE_CASES[currentCase]) {
-        const fc = FREE_CASES[currentCase];
-        if (roll < 50) { winKeys = fc.k1; winText = winKeys + ' 🔑'; }
-        else if (roll < 85) { winKeys = fc.k2; winText = winKeys + ' 🔑'; }
-        else if (roll < 95) { winKeys = fc.k3; winText = winKeys + ' 🔑'; }
-        else if (roll < (100 - fc.chance)) { winKeys = fc.k4; winText = winKeys + ' 🔑'; }
-        else { winText = `${fc.skin.name} ($${fc.skin.price})`; skinObj = { ...fc.skin }; }
-    } else if (currentCase === 'donate_start') {
-        if (roll < 70) { winText = 'P250 | Sand Dune ($0.20)'; skinObj = { name: 'P250 | Sand Dune', price: 0.20, sellKeys: 5 }; }
-        else if (roll < 95) { winText = 'Glock-18 | Oxide ($0.45)'; skinObj = { name: 'Glock-18 | Oxide', price: 0.45, sellKeys: 12 }; }
-        else if (roll < 99.5) { winText = 'M4A4 | Magnesium ($1.50)'; skinObj = { name: 'M4A4 | Magnesium', price: 1.50, sellKeys: 35 }; }
-        else { winText = 'USP-S | Cortex ($5.00)'; skinObj = { name: 'USP-S | Cortex', price: 5.00, sellKeys: 110 }; }
-    } else if (currentCase === 'donate_elite') {
-        if (roll < 65) { winText = 'AWP | Atheris ($0.65)'; skinObj = { name: 'AWP | Atheris', price: 0.65, sellKeys: 16 }; }
-        else if (roll < 93) { winText = 'AK-47 | Ice Coaled ($1.70)'; skinObj = { name: 'AK-47 | Ice Coaled', price: 1.70, sellKeys: 40 }; }
-        else if (roll < 99) { winText = 'M4A1-S | Decimator ($4.00)'; skinObj = { name: 'M4A1-S | Decimator', price: 4.00, sellKeys: 90 }; }
-        else { winText = 'Deagle | Printstream ($15.00)'; skinObj = { name: 'Deagle | Printstream', price: 15.00, sellKeys: 320 }; }
-    } else if (currentCase === 'donate_knife') {
-        if (roll < 70) { winText = 'AK-47 | Redline ($1.80)'; skinObj = { name: 'AK-47 | Redline', price: 1.80, sellKeys: 42 }; }
-        else if (roll < 92) { winText = 'AWP | Neo-Noir ($5.00)'; skinObj = { name: 'AWP | Neo-Noir', price: 5.00, sellKeys: 110 }; }
-        else if (roll < 99) { winText = 'M4A1-S | Hyper Beast ($12)'; skinObj = { name: 'M4A1-S | Hyper Beast', price: 12.00, sellKeys: 260 }; }
-        else if (roll < 99.9) { winText = 'AWP | Asiimov ($35.00)'; skinObj = { name: 'AWP | Asiimov', price: 35.00, sellKeys: 750 }; }
-        else { winText = '★ Нож-бабочка ($100.00)'; skinObj = { name: '★ Нож-бабочка', price: 100.00, sellKeys: 2000 }; }
-    }
-
-    buildTrack(winText);
-    const track = document.getElementById('track');
-    const wrapWidth = track.parentElement.offsetWidth;
-    const itemWidth = 94;
-    const targetOffset = (28 * itemWidth) + (itemWidth / 2) - (wrapWidth / 2);
-    const duration = isFast ? 350 : 3500;
-
-    setTimeout(() => {
-        track.style.transition = `transform ${duration}ms cubic-bezier(0.15, 0.85, 0.25, 1)`;
-        track.style.transform = `translateX(-${targetOffset}px)`;
-    }, 30);
-
-    setTimeout(() => {
-        isSpinning = false;
-        if (skinObj) {
-            const rType = skinObj.price >= 50 ? 'gold' : (skinObj.price >= 5 ? 'rare' : 'pink');
-            pushLiveDrop('@Вы', skinObj.name, rType);
-            openWinModal(skinObj);
-        } else if (winCoins > 0) {
-            state.coins += winCoins;
-            showToast('Выпало: ' + winCoins.toLocaleString() + ' 🪙');
-            updateUI();
-        } else {
-            state.keys += winKeys;
-            showToast('Выпало: ' + winKeys + ' 🔑');
-            updateUI();
-        }
-    }, duration + 120);
-}
-
-function buyKeysPack(keysAdd, starsCost) {
-    if (state.stars < starsCost) return showToast('Не хватает Stars!');
-    state.stars -= starsCost;
-    state.keys += keysAdd;
-    showToast('Куплено ' + keysAdd + ' ключей за ' + starsCost + ' ⭐!');
-    updateUI();
-}
-function spinDailyWheel() {
-    if (state.dailyUsed) return showToast('Ты уже крутил колесо сегодня! Приходи через 24ч');
-    runRewardedAd(() => {
-        state.dailyUsed = true;
-        state.adsWeek += 1;
-        state.adsMonth += 1;
-
-        const btn = document.getElementById('dailyBtn');
-        btn.style.background = '#262b40';
-
-        const isJackpot = Math.random() < 0.0001;
-        let targetSectorDeg = 30;
-        let bonusKeys = 5;
-
-        if (isJackpot) {
-            targetSectorDeg = 330;
-        } else {
-            const variants = [
-                { keys: 5, deg: 30 },
-                { keys: 10, deg: 90 },
-                { keys: 15, deg: 270 },
-                { keys: 25, deg: 210 }
-            ];
-            const pick = variants[Math.floor(Math.random() * variants.length)];
-            bonusKeys = pick.keys;
-            targetSectorDeg = pick.deg;
-        }
-
-        wheelDeg += 1800 + (360 - targetSectorDeg);
-        document.getElementById('wheelDisc').style.transform = `rotate(${wheelDeg}deg)`;
-
-        setTimeout(() => {
-            if (isJackpot) {
-                pushLiveDrop('@Вы', 'M4A1-S | Player Two', 'rare');
-                openWinModal({ name: 'M4A1-S | Player Two', price: 5.0, sellKeys: 110 });
-            } else {
-                state.keys += bonusKeys;
-                showToast('🎡 Колесо остановилось: +' + bonusKeys + ' 🔑!');
-                updateUI();
-            }
-        }, 4100);
-    });
-}
-
-function renderBattlePass() {
-    const track = document.getElementById('bpTrack');
-    if (!track) return;
-    const curLvl = getCurrentBpLevel();
-    track.innerHTML = '';
-
-    for (let lvl = 1; lvl <= 100; lvl++) {
-        let freeIcon = '🪙', freeName = `${(lvl * 100).toLocaleString()} Монет`, freeType = 'coins', freeVal = lvl * 100;
-        let premIcon = '🔑', premName = '3 Ключа', premType = 'keys', premVal = 3;
-
-        if (lvl === 100) {
-            freeIcon = '🎁'; freeName = 'Финал БП ($0.5-$5)'; freeType = 'skin_free'; freeVal = 1;
-            premIcon = '👑'; premName = 'GOLD КЕЙС ($2-$25)'; premType = 'skin_prem'; premVal = 1;
-        } else {
-            if (lvl % 5 === 0) {
-                const k = Math.min(8, Math.floor(lvl / 15) + 1);
-                freeIcon = '🔑'; freeName = `${k} Ключ${k === 1 ? '' : (k < 5 ? 'а' : 'ей')}`; freeType = 'keys'; freeVal = k;
-            } else {
-                const c = 500 + (lvl * 50);
-                freeIcon = '🪙'; freeName = `${c.toLocaleString()} Монет`; freeType = 'coins'; freeVal = c;
-            }
-            if (lvl % 2 === 0) {
-                const pk = Math.min(20, Math.floor(lvl / 10) + 3);
-                premIcon = '🔑'; premName = `${pk} Ключей`; premType = 'keys'; premVal = pk;
-            } else {
-                const pc = 2500 + (lvl * 150);
-                premIcon = '💰'; premName = `${pc.toLocaleString()} Монет`; premType = 'coins'; premVal = pc;
-            }
-        }
-
-        const isUnlocked = curLvl >= lvl;
-        const freeClaimed = state.claimedBp.includes(`f_${lvl}`);
-        const premClaimed = state.claimedBp.includes(`p_${lvl}`);
-
-        const col = document.createElement('div');
-        col.className = 'bp-col';
-        col.innerHTML = `
-            <div class="bp-lvl-badge ${isUnlocked ? 'unlocked' : ''}">LVL ${lvl}</div>
-            <div class="bp-slot">
-                <div class="bp-slot-tag">FREE</div>
-                <div class="bp-slot-icon">${freeIcon}</div>
-                <div class="bp-slot-name">${freeName}</div>
-                <button class="bp-claim-btn" ${(!isUnlocked || freeClaimed) ? 'disabled' : ''} onclick="claimBpReward('f_${lvl}', '${freeType}', ${freeVal})">
-                    ${freeClaimed ? 'Забрано' : (isUnlocked ? 'Забрать' : '🔒')}
-                </button>
-            </div>
-            <div class="bp-slot prem">
-                <div class="bp-slot-tag">GOLD PASS</div>
-                <div class="bp-slot-icon">${premIcon}</div>
-                <div class="bp-slot-name">${premName}</div>
-                <button class="bp-claim-btn" ${(!isUnlocked || !state.bpPremium || premClaimed) ? 'disabled' : ''} onclick="claimBpReward('p_${lvl}', '${premType}', ${premVal})">
-                    ${premClaimed ? 'Забрано' : (!state.bpPremium ? '👑 Gold' : (isUnlocked ? 'Забрать' : '🔒'))}
-                </button>
-            </div>
-        `;
-        track.appendChild(col);
-    }
-}
-
-function claimBpReward(id, type, val) {
-    if (state.claimedBp.includes(id)) return;
-    state.claimedBp.push(id);
-    if (type === 'coins') { state.coins += val; showToast(`Получено +${val.toLocaleString()} монет!`); }
-    else if (type === 'keys') { state.keys += val; showToast(`Получено +${val} 🔑!`); }
-    else if (type === 'skin_free') {
-        state.inventory.push({ name: 'MP9 | Hydra ($0.55)', price: 0.55, sellKeys: 14 });
-        showToast('Финальный скин БП добавлен в инвентарь!');
-    } else if (type === 'skin_prem') {
-        state.inventory.push({ name: 'AWP | Redline ($5.00)', price: 5.00, sellKeys: 110 });
-        showToast('👑 Финальный GOLD-скин добавлен в инвентарь!');
-    }
-    updateUI();
-}
-
-function buyPremiumBP() {
-    if (state.bpPremium) return showToast('GOLD PASS уже активирован!');
-    if (state.stars < 350) return showToast('Нужно 350 ⭐!');
-    state.stars -= 350;
-    state.bpPremium = true;
-    document.getElementById('bpStatus').innerText = '👑 GOLD PASS';
-    document.getElementById('buyBpBtn').innerText = '✅ GOLD PASS активен';
-    showToast('👑 GOLD PASS активирован!');
-    updateUI();
-}
-function renderInventory() {
-    const list = document.getElementById('invList');
-    document.getElementById('invCount').innerText = state.inventory.length + ' шт.';
-    if (state.inventory.length === 0) {
-        list.innerHTML = '<p style="font-size:13px;color:var(--muted);text-align:center;padding:16px 0;">Пока пусто. Открывай кейсы в Магазине!</p>';
-        return;
-    }
-    list.innerHTML = '';
-    state.inventory.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'inv-item';
-        div.innerHTML = `
-            <div>
-                <div style="font-size:13px;font-weight:800;">${item.name}</div>
-                <div style="font-size:11px;color:var(--green);">$${item.price.toFixed(2)}</div>
-            </div>
-            <div class="inv-actions">
-                <button class="btn btn-dark btn-sm" style="margin:0" onclick="sellSkin(${idx})">+${item.sellKeys} 🔑</button>
-                <button class="btn btn-green btn-sm" style="margin:0" onclick="withdrawSkin(${idx})">Вывод</button>
-            </div>
-        `;
-        list.appendChild(div);
-    });
-}
-
-function sellSkin(idx) {
-    const item = state.inventory[idx];
-    state.keys += item.sellKeys;
-    state.inventory.splice(idx, 1);
-    showToast('Скин продан за +' + item.sellKeys + ' 🔑!');
-    updateUI();
-}
-
-function withdrawSkin(idx) {
-    const url = document.getElementById('tradeUrl').value.trim();
-    if (!url.includes('://steamcommunity.com')) return showToast('Сначала вставь и сохрани свою Steam Trade URL!');
-    const item = state.inventory[idx];
-    const uname = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? '@' + (tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.id) : 'Игрок';
-    state.inventory.splice(idx, 1);
-
-    if (tg && tg.sendData) {
-        try { tg.sendData(JSON.stringify({ action: 'withdraw', adminId: ADMIN_CHAT_ID, user: uname, skin: item.name, price: item.price, tradeUrl: url })); } catch (e) {}
-    }
-    showToast(`Заявка на вывод ${item.name} отправлена админу!`);
-    updateUI();
-}
-
-function saveTradeUrl() {
-    const url = document.getElementById('tradeUrl').value.trim();
-    if (!url.includes('://steamcommunity.com')) return showToast('Неверная ссылка обмена Steam!');
-    localStorage.setItem('westyloot_trade', url);
-    showToast('Steam Trade URL сохранена!');
-}
-
-function usePromo() {
-    const code = document.getElementById('promoCode').value.trim().toUpperCase();
-    if (!code) return showToast('Введи промокод!');
-    if (!state.usedPromos) state.usedPromos = [];
-
-    if (code === 'ADMINTEST' && isAdmin()) {
-        state.keys += 500;
-        state.stars += 1000;
-        state.coins += 500000;
-        document.getElementById('promoCode').value = '';
-        showToast('👑 Админ-тест: +500 🔑, +1000 ⭐ и +500 000 🪙!');
-        updateUI();
-        return;
-    }
-
-    if (state.usedPromos.includes(code)) return showToast('Ты уже активировал этот промокод!');
-
-    const PROMOS = {
-        'WESTYSTART': { keys: 5, coins: 15000 },
-        'STANDOFF2':  { keys: 3, coins: 25000 }
-    };
-
-    if (PROMOS[code]) {
-        state.usedPromos.push(code);
-        state.keys += PROMOS[code].keys;
-        state.coins += PROMOS[code].coins;
-        document.getElementById('promoCode').value = '';
-        showToast(`Промокод активирован! +${PROMOS[code].keys} 🔑 и +${PROMOS[code].coins.toLocaleString()} монет`);
-        updateUI();
-    } else {
-        showToast('Неверный промокод');
-    }
-}
-
-setInterval(() => {
-    const statusEl = document.getElementById('acStatus');
-    const freeBtn = document.getElementById('acFreeBtn');
-    const coinEl = document.getElementById('coinVisual');
-    if (!statusEl || !freeBtn) return;
-
-    const now = Date.now();
-    if (state.acEndTime && state.acEndTime > now) {
-        const speed = state.acSpeed || 2;
-        const last = state.acLastTick || now;
-        const secPassed = Math.max(1, Math.floor((now - last) / 1000));
-        state.acLastTick = now;
-        state.coins += speed * secPassed;
-        document.getElementById('coins').innerText = Math.floor(state.coins).toLocaleString();
-        if (coinEl) coinEl.classList.add('mining');
-
-        const leftSec = Math.floor((state.acEndTime - now) / 1000);
-        const h = String(Math.floor(leftSec / 3600)).padStart(2, '0');
-        const m = String(Math.floor((leftSec % 3600) / 60)).padStart(2, '0');
-        const s = String(leftSec % 60).padStart(2, '0');
-        statusEl.innerText = `🟢 +${speed} кл/с (${h}:${m}:${s})`;
-        statusEl.style.color = 'var(--green)';
-        freeBtn.innerText = '🤖 Автокликер уже работает';
-        saveProgress();
-    } else {
-        if (coinEl) coinEl.classList.remove('mining');
-        const prog = state.acAdProgress || 0;
-        statusEl.innerText = 'Не активен';
-        statusEl.style.color = 'var(--muted)';
-        freeBtn.innerText = `🎬 Автокликер (2 кл/с на 1ч): ${prog} / 5 реклам`;
-    }
-}, 1000);
-
-let isCloudLoaded = false;
-let saveTimer = null;
-
-function getInitData() {
-    return (tg && tg.initData) ? tg.initData : "";
-}
-
-function saveProgress() {
-    if (!isCloudLoaded) return;
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-        const initData = getInitData();
-        if (!initData) return;
-        fetch(`${API_BASE}/secure_save`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ initData: initData, state: state })
-        }).then(r => {
-            if (r.status === 403) {
-                showToast('Попытка взлома заблокирована сервером!');
-                setTimeout(() => location.reload(), 1000);
-            }
-        }).catch(() => {});
-    }, 500);
-}
-
-const origUpdateUI = updateUI;
-updateUI = function() {
-    origUpdateUI();
-    saveProgress();
+const CASES_CONFIG = {
+  guarant_300k: {
+    title: '👑 Гарант-кейс ($1.50–$25)', currency: 'guarant', costCoins: 300000, costKeys: 65, costText: '300 000 🪙 + 65 🔑',
+    items: [
+      ['AK-47 | Slate', 1.50, 35, 60, 34], ['M4A4 | Magnesium', 1.80, 42, 72, 26],
+      ['Glock-18 | Vogue', 2.50, 55, 100, 16], ['USP-S | Cortex', 3.50, 80, 140, 10],
+      ['M4A1-S | Decimator', 5.00, 110, 200, 6], ['AWP | Neo-Noir', 7.50, 165, 300, 4],
+      ['AK-47 | Ice Coaled', 11.00, 240, 440, 2.2], ['Deagle | Printstream', 16.00, 350, 640, 1.3],
+      ['AWP | Asiimov', 25.00, 550, 1000, 0.5]
+    ].map(([name, price, sk, ss, ch]) => ({ label: `${name} ($${price})`, chance: ch, tier: price >= 5 ? 'red' : 'gold', skin: { name, price, sellKeys: sk, sellStars: ss } }))
+  },
+  coin_15k: mkCase('🥉 Кейс «Медный»', 'coins', 15000, 1, [
+    ['MP9 | Sand Dashed', 0.10, 3, 5, 11], ['P250 | Sand Dune', 0.18, 5, 8, 7],
+    ['MAC-10 | Silver', 0.30, 8, 13, 4.5], ['Glock-18 | Oxide', 0.50, 12, 22, 2.5],
+    ['USP-S | Ticket to Hell', 0.90, 22, 38, 1]
+  ]),
+  coin_50k: mkCase('🥈 Кейс «Серебряный»', 'coins', 50000, 1, [
+    ['P250 | Sand Dune', 0.25, 6, 11, 11], ['Glock-18 | Oxide', 0.45, 11, 20, 7],
+    ['USP-S | Ticket to Hell', 0.85, 21, 36, 4.5], ['AK-47 | Safari Mesh', 1.30, 32, 55, 2.5],
+    ['M4A4 | Magnesium', 1.80, 45, 75, 1]
+  ]),
+  coin_100k: mkCase('🥇 Кейс «Золотой»', 'coins', 100000, 1, [
+    ['Glock-18 | Oxide', 0.50, 12, 22, 11], ['USP-S | Ticket to Hell', 0.90, 22, 38, 7],
+    ['AK-47 | Slate', 1.50, 36, 62, 4.5], ['AWP | Atheris', 2.20, 52, 90, 2.5],
+    ['USP-S | Cortex', 3.50, 82, 140, 1]
+  ]),
+  coin_150k: mkCase('💠 Кейс «Платиновый»', 'coins', 150000, 1, [
+    ['USP-S | Ticket to Hell', 0.85, 21, 36, 11], ['AK-47 | Safari Mesh', 1.30, 32, 55, 7],
+    ['M4A4 | Magnesium', 1.90, 46, 78, 4.5], ['Glock-18 | Vogue', 2.80, 66, 112, 2.5],
+    ['M4A1-S | Decimator', 4.50, 105, 180, 1]
+  ]),
+  coin_200k: mkCase('💎 Кейс «Алмазный»', 'coins', 200000, 1, [
+    ['AK-47 | Safari Mesh', 1.20, 28, 48, 11], ['M4A4 | Magnesium', 1.80, 45, 75, 7],
+    ['AWP | Atheris', 2.50, 60, 100, 4.5], ['AK-47 | Ice Coaled', 4.20, 98, 168, 2.5],
+    ['AWP | Neo-Noir', 7.00, 160, 280, 1]
+  ]),
+  coin_350k: mkCase('🔮 Кейс «Мифический»', 'coins', 350000, 1, [
+    ['AWP | Atheris', 2.00, 48, 82, 11], ['Glock-18 | Vogue', 3.00, 72, 120, 7],
+    ['M4A1-S | Decimator', 4.80, 112, 192, 4.5], ['AWP | Neo-Noir', 7.50, 170, 300, 2.5],
+    ['M4A1-S | Hyper Beast', 12.00, 270, 480, 1]
+  ]),
+  coin_500k: mkCase('👑 Кейс «Императорский»', 'coins', 500000, 1, [
+    ['M4A4 | Magnesium', 3.50, 82, 140, 11], ['M4A1-S | Decimator', 5.00, 115, 200, 7],
+    ['AWP | Neo-Noir', 8.00, 180, 320, 4.5], ['Deagle | Printstream', 15.00, 330, 600, 2.5],
+    ['AWP | Asiimov', 25.00, 550, 1000, 1]
+  ]),
+  free_25: mkCase('📦 Кейс «Новичок»', 'keys', 25, 1, [
+    ['P250 | Sand Dune', 0.25, 6, 11, 11], ['MP9 | Sand Dashed', 0.40, 10, 17, 7],
+    ['Glock-18 | Oxide', 0.65, 16, 27, 4.5], ['USP-S | Ticket to Hell', 1.10, 26, 45, 2.5],
+    ['AK-47 | Slate', 1.60, 38, 65, 1]
+  ]),
+  free_50: mkCase('🎒 Кейс «Базовый»', 'keys', 50, 1, [
+    ['Glock-18 | Oxide', 0.50, 12, 22, 11], ['USP-S | Ticket to Hell', 0.90, 22, 38, 7],
+    ['AK-47 | Slate', 1.50, 36, 62, 4.5], ['M4A4 | Magnesium', 2.10, 50, 85, 2.5],
+    ['AWP | Atheris', 3.00, 72, 120, 1]
+  ]),
+  free_75: mkCase('🎖️ Кейс «Армейский»', 'keys', 75, 1, [
+    ['USP-S | Ticket to Hell', 1.00, 24, 40, 11], ['AK-47 | Slate', 1.60, 38, 65, 7],
+    ['Glock-18 | Vogue', 2.60, 62, 105, 4.5], ['USP-S | Cortex', 3.80, 90, 152, 2.5],
+    ['M4A1-S | Decimator', 5.00, 115, 200, 1]
+  ]),
+  free_100: mkCase('🔫 Кейс «Запрещённый»', 'keys', 100, 1, [
+    ['AK-47 | Slate', 2.50, 55, 100, 11], ['Glock-18 | Vogue', 3.40, 78, 136, 4.5],
+    ['M4A1-S | Decimator', 5.00, 115, 200, 7], ['AWP | Neo-Noir', 7.50, 170, 300, 2.5],
+    ['M4A1-S | Hyper Beast', 11.00, 250, 440, 1]
+  ]),
+  free_150: mkCase('🔮 Кейс «Засекреченный»', 'keys', 150, 1, [
+    ['M4A1-S | Decimator', 4.00, 90, 160, 11], ['AWP | Neo-Noir', 6.50, 150, 260, 7],
+    ['AK-47 | Ice Coaled', 9.50, 215, 380, 4.5], ['Deagle | Printstream', 14.00, 315, 560, 2.5],
+    ['AWP | Asiimov', 22.00, 490, 880, 1]
+  ]),
+  free_200: mkCase('🔥 Кейс «Тайный»', 'keys', 200, 1, [
+    ['AWP | Neo-Noir', 6.00, 130, 240, 11], ['AK-47 | Ice Coaled', 9.00, 200, 360, 7],
+    ['M4A1-S | Hyper Beast', 13.00, 290, 520, 4.5], ['Deagle | Printstream', 18.00, 400, 720, 2.5],
+    ['AWP | Asiimov', 28.00, 620, 1120, 1]
+  ]),
+  free_300: mkCase('👑 Кейс «Легендарный»', 'keys', 300, 1, [
+    ['Deagle | Printstream', 15.00, 320, 600, 11], ['AWP | Asiimov', 25.00, 550, 1000, 7],
+    ['★ Нож-наваха | Сажа', 45.00, 980, 1800, 4.5], ['★ Штык-нож | Автотроника', 70.00, 1500, 2800, 2.5],
+    ['★ Нож-бабочка | Градиент', 100.00, 2200, 4000, 1]
+  ]),
+  donate_start: mkCase('💠 Кейс «Стартовый»', 'stars', 50, 1, [
+    ['P250 | Sand Dune', 0.25, 6, 11, 25], ['Glock-18 | Oxide', 0.50, 12, 22, 18],
+    ['AK-47 | Slate', 1.50, 36, 62, 12], ['M4A4 | Magnesium', 2.20, 52, 90, 6],
+    ['USP-S | Cortex', 5.00, 115, 200, 2]
+  ]),
+  donate_elite: mkCase('⚡ Кейс «Элитный»', 'stars', 150, 1, [
+    ['AWP | Atheris', 1.00, 24, 40, 25], ['AK-47 | Ice Coaled', 2.50, 55, 100, 18],
+    ['M4A1-S | Decimator', 5.00, 115, 200, 12], ['AWP | Neo-Noir', 9.00, 200, 360, 6],
+    ['Deagle | Printstream', 15.00, 330, 600, 2]
+  ]),
+  donate_knife: mkCase('🗡️ Кейс «Ножевой»', 'stars', 500, 1, [
+    ['AK-47 | Redline', 3.00, 70, 120, 25], ['AWP | Neo-Noir', 8.00, 180, 320, 18],
+    ['M4A1-S | Hyper Beast', 15.00, 330, 600, 12], ['AWP | Asiimov', 35.00, 750, 1400, 6],
+    ['★ Нож-бабочка ($100)', 100.00, 2200, 4000, 2]
+  ])
 };
+function selectCase(id, silent = false) {
+  if (isSpinning || !CASES_CONFIG[id]) return;
+  currentCase = id;
+  const cfg = CASES_CONFIG[id];
+  document.getElementById('selectedCaseTitle').innerText = cfg.title;
+  document.getElementById('selectedCaseCost').innerText = cfg.costText;
+  const tot = cfg.items.reduce((a, b) => a + b.chance, 0);
+  document.getElementById('caseDropsList').innerHTML = cfg.items.map(it => `<span class="live-chip ${it.tier === 'red' ? 'rare' : ''}">${it.label} (${((it.chance/tot)*100).toFixed(1)}%)</span>`).join('');
+  buildTrack(cfg.items[0].label);
+  if (!silent) showToast('Выбран: ' + cfg.title);
+}
 
-initLiveFeed();
-initReferrals();
-selectCase('coin_15k', true);
-
-const savedTrade = localStorage.getItem('westyloot_trade');
-if (savedTrade && document.getElementById('tradeUrl')) document.getElementById('tradeUrl').value = savedTrade;
-
-const initDataOnLoad = getInitData();
-if (initDataOnLoad) {
-    fetch(`${API_BASE}/secure_load`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: initDataOnLoad })
-    })
-        .then(r => r.json())
-        .then(serverData => {
-            if (serverData && typeof serverData.coins === 'number') {
-                state = { ...state, ...serverData };
-            }
-            isCloudLoaded = true;
-            origUpdateUI();
-        })
-        .catch(() => {
-            isCloudLoaded = true;
-            origUpdateUI();
-        });
-} else {
-    isCloudLoaded = true;
-    origUpdateUI();
-}
-function makeCoinCase(t, cost, c, s) {
-  const pts = [], sum = c[1]+c[3]+c[5]+c[7] + s.reduce((a, b) => a + b.chance, 0);
-  for (let i = 0; i < 8; i += 2) pts.push({ label: c[i].toLocaleString()+' 🪙', coins: c[i], chanceNum: c[i+1]/sum*100, chance: (c[i+1]/sum*100).toFixed(1)+'%', tier: i>=4?'gold':'' });
-  s.forEach(x => pts.push({ label: `${x.name} ($${x.price})`, skin: x, chanceNum: x.chance/sum*100, chance: (x.chance/sum*100).toFixed(1)+'%', tier: x.price>=1?'red':'gold' }));
-  return { title: t, costText: cost.toLocaleString() + ' 🪙', currency: 'coins', cost, items: pts };
-}
-function makeKeyCase(t, cost, k, s) {
-  const pts = [], sum = k[1]+k[3]+k[5]+k[7] + s.reduce((a, b) => a + b.chance, 0);
-  for (let i = 0; i < 8; i += 2) pts.push({ label: k[i]+' 🔑', keys: k[i], chanceNum: k[i+1]/sum*100, chance: (k[i+1]/sum*100).toFixed(1)+'%', tier: i>=4?'gold':'' });
-  s.forEach(x => pts.push({ label: `${x.name} ($${x.price})`, skin: x, chanceNum: x.chance/sum*100, chance: (x.chance/sum*100).toFixed(1)+'%', tier: x.price>=1?'red':'gold' }));
-  return { title: t, costText: cost + ' 🔑', currency: 'keys', cost, items: pts };
-}
-function openWinModal(s) {
-  lastWonSkin = s;
-  const st = s.sellStars || Math.max(5, Math.round(s.price * 40));
-  document.getElementById('modalIcon').innerText = s.name.includes('Нож') ? '🗡' : '🔫';
-  document.getElementById('modalTitle').innerText = s.name;
-  document.getElementById('modalPrice').innerText = `$${s.price.toFixed(2)} (или ${st} ⭐)`;
-  document.getElementById('modalSellBtn').innerHTML = `💰 +${s.sellKeys} 🔑 &nbsp;|&nbsp; <span onclick="event.stopPropagation();sellWonForStars()">⭐ +${st} Stars</span>`;
-  document.getElementById('winModal').style.display = 'flex';
-}
-function sellWonForStars() {
-  if (!lastWonSkin) return;
-  const st = lastWonSkin.sellStars || Math.max(5, Math.round(lastWonSkin.price * 40));
-  state.stars += st; lastWonSkin = null;
-  document.getElementById('winModal').style.display = 'none';
-  showToast(`Продано за +${st} ⭐!`); updateUI();
-}
-async function withdrawStarsToTg() {
-  const amt = Math.floor(Number(prompt('Сколько Stars вывести в Telegram? (мин. 50 ⭐)', state.stars) || 0));
-  if (amt < 50 || state.stars < amt) return showToast('Минимум 50 ⭐ или не хватает баланса!');
-  const res = await fetch(`${API_BASE}/withdraw_stars`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ initData: getInitData(), amount: amt, adminId: ADMIN_CHAT_ID })
-  });
-  const d = await res.json();
-  if (!res.ok) return showToast(d.error || 'Ошибка вывода');
-  state.stars = d.stars; showToast(`✅ Заявка на ${amt} ⭐ отправлена админу!`); updateUI();
-}
-const origRenderInv = renderInventory;
-renderInventory = function() {
-  origRenderInv();
-  const list = document.getElementById('invList');
-  if (list && !document.getElementById('wdStarsBtn')) {
-    list.insertAdjacentHTML('beforebegin', `<button id="wdStarsBtn" class="btn btn-green" style="margin-bottom:10px;" onclick="withdrawStarsToTg()">⭐ Вывести Stars в Telegram (${state.stars} ⭐)</button>`);
-  } else if (document.getElementById('wdStarsBtn')) {
-    document.getElementById('wdStarsBtn').innerText = `⭐ Вывести Stars в Telegram (${state.stars} ⭐)`;
+function buildTrack(winLabel) {
+  const cfg = CASES_CONFIG[currentCase], tr = document.getElementById('track');
+  tr.style.transition = 'none'; tr.style.transform = 'translateX(0px)';
+  let html = '';
+  for (let i = 0; i < 35; i++) {
+    const it = (i === 28) ? (cfg.items.find(x => x.label === winLabel) || cfg.items[0]) : cfg.items[Math.floor(Math.random() * cfg.items.length)];
+    html += `<div class="r-item ${it.tier}">${it.label}</div>`;
   }
-};
-spinSelectedCase = function(isFast = false) {
+  tr.innerHTML = html;
+}
+
+function spinSelectedCase(fast = false) {
   if (isSpinning) return;
   const cfg = CASES_CONFIG[currentCase];
   if (cfg.currency === 'guarant') {
     if (state.coins < 300000 || state.keys < 65) return showToast('Нужно 300 000 🪙 и 65 🔑!');
     state.coins -= 300000; state.keys -= 65;
-  } else if (cfg.currency === 'coins') {
-    if (state.coins < cfg.cost) return showToast('Нужно ' + cfg.cost.toLocaleString() + ' 🪙!');
-    state.coins -= cfg.cost;
-  } else if (cfg.currency === 'keys') {
-    if (state.keys < cfg.cost) return showToast('Нужно ' + cfg.cost + ' 🔑!');
-    state.keys -= cfg.cost;
-  } else {
-    if (state.stars < cfg.cost) return showToast('Недостаточно Stars!');
-    state.stars -= cfg.cost;
-  }
+  } else if (state[cfg.currency] < cfg.cost) return showToast('Недостаточно средств!');
+  else state[cfg.currency] -= cfg.cost;
   isSpinning = true; state.casesOpened += 1; updateUI();
-  const skins = cfg.items.filter(x => x.skin);
-  let chosen = cfg.items[0], r = Math.random() * 100, acc = 0;
-  for (const it of cfg.items) { acc += (it.chanceNum || parseFloat(it.chance)); if (r <= acc) { chosen = it; break; } }
+  const tot = cfg.items.reduce((a, b) => a + b.chance, 0), skins = cfg.items.filter(x => x.skin);
+  let r = Math.random() * tot, acc = 0, chosen = cfg.items[0];
+  for (const it of cfg.items) { acc += it.chance; if (r <= acc) { chosen = it; break; } }
   if (state.casesOpened === 2 && skins.length) chosen = skins[0];
   buildTrack(chosen.label);
-  const track = document.getElementById('track'), off = (28 * 94) + 47 - (track.parentElement.offsetWidth / 2), dur = isFast ? 350 : 3500;
-  setTimeout(() => { track.style.transition = `transform ${dur}ms cubic-bezier(0.15,0.85,0.25,1)`; track.style.transform = `translateX(-${off}px)`; }, 30);
+  const tr = document.getElementById('track'), off = (28 * 94) + 47 - (tr.parentElement.offsetWidth / 2), dur = fast ? 350 : 3500;
+  setTimeout(() => { tr.style.transition = `transform ${dur}ms cubic-bezier(0.15,0.85,0.25,1)`; tr.style.transform = `translateX(-${off}px)`; }, 30);
   setTimeout(() => {
     isSpinning = false;
-    if (chosen.skin) { pushLiveDrop('@Вы', chosen.skin.name, chosen.skin.price >= 5 ? 'rare' : 'pink'); openWinModal(chosen.skin); }
-    else if (chosen.coins) { state.coins += chosen.coins; showToast('Выпало: ' + chosen.coins.toLocaleString() + ' 🪙'); updateUI(); }
-    else { state.keys += (chosen.keys || 1); showToast('Выпало: ' + (chosen.keys || 1) + ' 🔑'); updateUI(); }
+    if (chosen.skin) { lastWonSkin = chosen.skin; openWinModal(chosen.skin); }
+    else { state[chosen.valCur] += chosen.val; showToast('Выпало: ' + chosen.label); updateUI(); saveProgress(); }
   }, dur + 120);
-};
+}
+
+function openWinModal(s) {
+  document.getElementById('modalIcon').innerText = s.name.includes('Нож') ? '🗡' : '🔫';
+  document.getElementById('modalTitle').innerText = s.name;
+  document.getElementById('modalPrice').innerText = `$${s.price.toFixed(2)} (или ${s.sellStars} ⭐)`;
+  document.getElementById('modalSellBtn').innerHTML = `💰 +${s.sellKeys} 🔑 &nbsp;|&nbsp; <span onclick="event.stopPropagation();sellWonStars()">⭐ +${s.sellStars} Stars</span>`;
+  document.getElementById('winModal').style.display = 'flex';
+}
+function closeWinModal(keep) {
+  document.getElementById('winModal').style.display = 'none';
+  if (!lastWonSkin) return;
+  if (keep) { state.inventory.push(lastWonSkin); showToast('Скин добавлен в инвентарь!'); }
+  else { state.keys += lastWonSkin.sellKeys; showToast(`Продано за +${lastWonSkin.sellKeys} 🔑!`); }
+  lastWonSkin = null; updateUI(); saveProgress();
+}
+
+function sellWonStars() {
+  if (!lastWonSkin) return;
+  state.stars += lastWonSkin.sellStars; showToast(`Продано за +${lastWonSkin.sellStars} ⭐!`);
+  lastWonSkin = null; document.getElementById('winModal').style.display = 'none'; updateUI(); saveProgress();
+}
+
+function renderInventory() {
+  const box = document.getElementById('invList');
+  if (!box) return;
+  const wdBtn = `<button class="btn btn-green" style="margin-bottom:10px;" onclick="withdrawStars()">⭐ Вывести Stars в Telegram (${Math.floor(state.stars)} ⭐)</button>`;
+  if (!state.inventory.length) { box.innerHTML = wdBtn + '<div class="card" style="text-align:center;color:var(--muted);">Инвентарь пуст</div>'; return; }
+  box.innerHTML = wdBtn + state.inventory.map((s, i) => `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px;">
+      <div><b>${s.name}</b><div style="font-size:11px;color:var(--accent);">$${s.price.toFixed(2)}</div></div>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-blue btn-sm" style="margin:0;" onclick="sellInv(${i},'k')">+${s.sellKeys} 🔑</button>
+        <button class="btn btn-green btn-sm" style="margin:0;" onclick="sellInv(${i},'s')">+${s.sellStars} ⭐</button>
+      </div>
+    </div>`).join('');
+}
+
+function sellInv(idx, type) {
+  const s = state.inventory.splice(idx, 1);
+  if (!s) return;
+  if (type === 's') { state.stars += s.sellStars; showToast(`+${s.sellStars} ⭐`); }
+  else { state.keys += s.sellKeys; showToast(`+${s.sellKeys} 🔑`); }
+  updateUI(); saveProgress();
+}
+
+async function withdrawStars() {
+  const amt = Math.floor(Number(prompt('Сколько Stars вывести? (минимум 50 ⭐)', Math.floor(state.stars)) || 0));
+  if (amt < 50 || state.stars < amt) return showToast('Минимум 50 ⭐ или не хватает баланса!');
+  const res = await fetch(`${API_BASE}/withdraw_stars`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initData: tg ? tg.initData : '', amount: amt, adminId: ADMIN_CHAT_ID })
+  });
+  const d = await res.json();
+  if (!res.ok) return showToast(d.error || 'Ошибка вывода');
+  state.stars = d.stars; showToast(`✅ Заявка на ${amt} ⭐ отправлена!`); updateUI();
+}
+function runAd(cb) {
+  const show = () => { if (!adCtrl) adCtrl = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID }); adCtrl.show().then(cb).catch(() => showToast('Реклама не досмотрена')); };
+  if (window.Adsgram) return show();
+  const s = document.createElement('script'); s.src = 'https://' + 'sad.adsgram.ai' + '/js/sad.min.js';
+  s.onload = show; s.onerror = () => showToast('AdsGram недоступен'); document.head.appendChild(s);
+}
+function watchAdForKey() { runAd(() => { state.keys += 1; state.adsWeek += 1; state.adsMonth += 1; showToast('+1 🔑 за рекламу!'); updateUI(); saveProgress(); }); }
+function watchAdForAutoclicker() {
+  runAd(() => {
+    state.adsWeek += 1; state.adsMonth += 1; state.acAdProgress += 1;
+    if (state.acAdProgress >= 5) { state.acAdProgress = 0; state.acEndTime = Date.now() + 3600000; showToast('⚡ Автокликер запущен на 1 час!'); }
+    else showToast(`Прогресс автокликера: ${state.acAdProgress}/5`);
+    updateUI(); saveProgress();
+  });
+}
+function spinDailyWheel() {
+  if (state.dailyUsed) return showToast('Уже крутил сегодня!');
+  state.dailyUsed = true; const win = [5000, 15000, 3, 10][Math.floor(Math.random() * 4)];
+  if (win >= 1000) { state.coins += win; showToast(`🎡 Выпало +${win.toLocaleString()} 🪙!`); }
+  else { state.keys += win; showToast(`🎡 Выпало +${win} 🔑!`); }
+  updateUI(); saveProgress();
+}
+function copyRefLink() { const inp = document.getElementById('refLinkInput'); inp.select(); navigator.clipboard.writeText(inp.value); showToast('Ссылка скопирована!'); }
+function saveTradeUrl() { state.tradeUrl = document.getElementById('tradeUrlInput').value.trim(); showToast('Trade URL сохранён!'); saveProgress(); }
+function usePromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  if (!code || state.usedPromos.includes(code)) return showToast('Неверный или использованный промокод');
+  if (code === 'START2026') { state.usedPromos.push(code); state.keys += 10; showToast('🎁 +10 🔑 по промокоду!'); updateUI(); saveProgress(); }
+  else showToast('Промокод не найден');
+}
+async function saveProgress() {
+  if (!tg || !tg.initData) return;
+  fetch(`${API_BASE}/secure_save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: tg.initData, state }) }).catch(() => {});
+}
+async function initApp() {
+  const uid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : '777';
+  const refInp = document.getElementById('refLinkInput'); if (refInp) refInp.value = `https://t.me{BOT_USERNAME}?start=ref_${uid}`;
+  if (tg && tg.initData) {
+    try { const r = await fetch(`${API_BASE}/secure_load`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: tg.initData }) }); if (r.ok) Object.assign(state, await r.json()); } catch {}
+  }
+  const trInp = document.getElementById('tradeUrlInput'); if (trInp && state.tradeUrl) trInp.value = state.tradeUrl;
+  selectCase('coin_15k', true); updateUI();
+  setInterval(() => {
+    const left = state.acEndTime - Date.now(), stEl = document.getElementById('acStatusText');
+    if (left > 0) { state.coins += 2; if (stEl) stEl.innerText = `⚡ Активен: ещё ${Math.ceil(left / 60000)} мин.`; updateUI(); if (++acSaveTick >= 30) { acSaveTick = 0; saveProgress(); } }
+    else if (stEl) stEl.innerText = 'Не активен — посмотри 5 реклам для запуска на 1 час';
+  }, 1000);
+}
+initApp();
