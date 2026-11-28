@@ -1,363 +1,185 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>WestyLoot</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-    <style>
-        :root { --bg:#0d0f17; --card:#171a29; --card-light:#20253b; --accent:#f59e0b; --star:#38bdf8; --text:#fff; --muted:#8b92a8; --green:#10b981; --red:#ef4444; --purple:#a855f7; }
-        * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; user-select:none; }
-        body { background:var(--bg); color:var(--text); padding:12px; padding-bottom:86px; min-height:100vh; }
-        body::before { content:""; position:fixed; inset:0; pointer-events:none; z-index:9999; box-shadow:inset 0 0 65px rgba(139,92,246,0.24), inset 0 0 130px rgba(88,28,135,0.18); }
-
-        .live-bar { display:flex; align-items:center; gap:8px; background:#121522; padding:7px 10px; border-radius:12px; margin-bottom:10px; border:1px solid rgba(167,139,250,0.25); overflow:hidden; }
-        .live-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); flex-shrink:0; animation:pulse 1.5s infinite; }
-        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
-        .live-feed { display:flex; gap:8px; overflow:hidden; white-space:nowrap; }
-        .live-chip { min-width:118px; background:linear-gradient(180deg, rgba(59,130,246,0.22), #151929); padding:6px 10px; border-radius:10px; border-bottom:3px solid #3b82f6; display:inline-flex; flex-direction:column; gap:2px; animation:slideIn 0.4s ease; box-shadow:0 4px 12px rgba(0,0,0,0.35); }
-        .live-chip.pink { background:linear-gradient(180deg, rgba(217,70,239,0.25), #151929); border-bottom-color:#d946ef; }
-        .live-chip.rare { background:linear-gradient(180deg, rgba(239,68,68,0.28), #151929); border-bottom-color:#ef4444; }
-        .live-chip.gold { background:linear-gradient(180deg, rgba(245,158,11,0.32), #151929); border-bottom-color:#f59e0b; }
-        .live-skin { font-size:11px; font-weight:800; color:#fff; display:flex; align-items:center; gap:4px; }
-        .live-user { font-size:9px; color:var(--muted); font-weight:600; }
-        @keyframes slideIn { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
-
-        .header { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; background:var(--card); padding:10px 12px; border-radius:16px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45); }
-        .stat { display:flex; flex-direction:column; align-items:center; }
-        .stat-label { font-size:10px; color:var(--muted); text-transform:uppercase; }
-        .stat-val { font-size:16px; font-weight:800; color:var(--accent); margin-top:2px; }
-        .stat-val.stars { color:var(--star); }
-        .card { background:var(--card); border-radius:18px; padding:15px; margin-bottom:14px; border:1px solid rgba(167,139,250,0.22); box-shadow:0 8px 28px rgba(0,0,0,0.45); }
-        .card-title { font-size:15px; font-weight:800; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
-        .badge { font-size:11px; padding:3px 8px; border-radius:8px; background:rgba(245,158,11,0.15); color:var(--accent); font-weight:700; }
-        .badge.star { background:rgba(56,189,248,0.15); color:var(--star); }
-        .badge.purple { background:rgba(168,85,247,0.18); color:#d8b4fe; }
-        .tab-content { display:none; }
-        .tab-content.active { display:block; }
-        .modal-overlay { position:fixed; inset:0; background:rgba(5,7,12,0.85); backdrop-filter:blur(6px); z-index:200; display:none; align-items:center; justify-content:center; padding:18px; }
-        .modal-box { width:100%; max-width:340px; background:linear-gradient(180deg, #1e2338, #131624); border:1.5px solid var(--purple); border-radius:22px; padding:22px 18px; text-align:center; box-shadow:0 0 40px rgba(168,85,247,0.4); }
-        .modal-icon { font-size:54px; margin:8px 0; }
-        .modal-title { font-size:18px; font-weight:900; margin-bottom:4px; }
-        .modal-sub { font-size:13px; color:var(--green); font-weight:700; margin-bottom:16px; }
-
-        .roulette-wrap { position:relative; height:88px; background:#08090e; border-radius:12px; overflow:hidden; margin-bottom:12px; border:1px solid rgba(167,139,250,0.40); }
-        .roulette-line { position:absolute; left:50%; top:0; bottom:0; width:3px; background:var(--accent); z-index:10; transform:translateX(-50%); box-shadow:0 0 12px var(--accent); }
-        .roulette-track { display:flex; height:100%; align-items:center; }
-        .r-item { min-width:86px; height:72px; margin:0 4px; background:#1c2033; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; text-align:center; padding:4px; border-bottom:3px solid #3b82f6; }
-        .r-item.gold { border-bottom-color:var(--accent); background:linear-gradient(180deg,#2e240d,#1c2033); color:var(--accent); }
-        .r-item.red { border-bottom-color:var(--red); background:linear-gradient(180deg,#331418,#1c2033); color:#fca5a5; }
-        .spin-row { display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:12px; }
-        .contents-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-top:8px; }
-        .c-chip { background:#111421; border-radius:9px; padding:6px 4px; text-align:center; border-bottom:2px solid #3b82f6; }
-        .c-chip.gold { border-bottom-color:var(--accent); }
-        .c-chip.red { border-bottom-color:var(--red); }
-        .c-name { font-size:10px; font-weight:700; color:#fff; }
-        .c-chance { font-size:9px; color:var(--muted); margin-top:2px; }
-
-        .btn { width:100%; padding:13px; border:none; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; color:#000; background:var(--accent); }
-        .btn:active { transform:scale(0.97); }
-        .btn-green { background:var(--green); color:#fff; margin-top:8px; }
-        .btn-star { background:var(--star); color:#051926; margin-top:8px; }
-        .btn-purple { background:var(--purple); color:#fff; margin-top:8px; }
-        .btn-dark { background:var(--card-light); color:#fff; margin-top:8px; }
-        .btn-sm { padding:8px 12px; font-size:12px; width:auto; }
-        .click-area { text-align:center; padding:8px 0 12px; }
-        .coin-btn { width:116px; height:116px; border-radius:50%; background:radial-gradient(circle,#fbbf24,#d97706); border:6px solid #78350f; font-size:42px; display:inline-flex; align-items:center; justify-content:center; cursor:default; box-shadow:0 0 32px rgba(139,92,246,0.35); }
-        .coin-btn.mining { animation:spinPulse 1.4s infinite ease-in-out; box-shadow:0 0 42px rgba(16,185,129,0.55); }
-        @keyframes spinPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
-        .shop-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-        .shop-item { background:var(--card-light); border-radius:14px; padding:12px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; }
-        .shop-item-icon { font-size:26px; margin-bottom:5px; }
-        .shop-item-name { font-size:13px; font-weight:700; margin-bottom:4px; }
-        .shop-item-sub { font-size:11px; color:var(--muted); margin-bottom:10px; }
-        .prog-bg { width:100%; height:9px; background:#08090e; border-radius:99px; overflow:hidden; margin:6px 0 12px; }
-        .prog-fill { height:100%; background:var(--green); width:0%; transition:width 0.3s; }
-        .input-row { display:flex; gap:8px; }
-        .text-input { flex:1; background:#08090e; border:1px solid #282d44; border-radius:10px; padding:11px; color:#fff; font-size:13px; font-weight:600; }
-        .inv-item { display:flex; justify-content:space-between; align-items:center; background:var(--card-light); padding:12px; border-radius:12px; margin-bottom:8px; border-left:4px solid var(--accent); }
-        .inv-actions { display:flex; gap:6px; }
-
-        .wheel-container { position:relative; width:220px; height:220px; margin:10px auto 16px; }
-        .wheel-pointer { position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:12px solid transparent; border-right:12px solid transparent; border-top:22px solid var(--red); z-index:15; }
-        .wheel-disc { width:100%; height:100%; border-radius:50%; border:6px solid #282d44; position:relative; overflow:hidden; transition:transform 4s cubic-bezier(0.15,0.85,0.25,1); background:conic-gradient(#1e293b 0deg 60deg,#2563eb 60deg 120deg,#1e293b 120deg 180deg,#10b981 180deg 240deg,#1e293b 240deg 300deg,#f59e0b 300deg 360deg); }
-        .wheel-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:44px; height:44px; border-radius:50%; background:#0d0f17; border:3px solid var(--accent); display:flex; align-items:center; justify-content:center; font-size:18px; z-index:10; }
-        .w-label { position:absolute; top:18px; left:50%; transform-origin:0 92px; font-size:11px; font-weight:800; color:#fff; }
-        .bp-track { display:flex; gap:10px; overflow-x:auto; padding:8px 4px 14px; }
-        .bp-col { min-width:96px; display:flex; flex-direction:column; gap:6px; }
-        .bp-lvl-badge { text-align:center; font-size:11px; font-weight:800; background:#08090e; padding:4px; border-radius:8px; color:var(--muted); border:1px solid #282d44; }
-        .bp-lvl-badge.unlocked { background:var(--accent); color:#000; border-color:var(--accent); }
-        .bp-slot { background:#1c2033; border-radius:12px; padding:10px 6px; text-align:center; border:1px solid rgba(255,255,255,0.06); }
-        .bp-slot.prem { background:linear-gradient(180deg,#2b210a,#1c2033); border-color:rgba(245,158,11,0.35); }
-        .bp-slot-tag { font-size:9px; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
-        .bp-slot.prem .bp-slot-tag { color:var(--accent); }
-        .bp-slot-icon { font-size:22px; margin-bottom:4px; }
-        .bp-slot-name { font-size:11px; font-weight:700; min-height:28px; display:flex; align-items:center; justify-content:center; }
-        .bp-claim-btn { margin-top:6px; width:100%; padding:5px; font-size:10px; font-weight:800; border:none; border-radius:6px; background:var(--green); color:#fff; cursor:pointer; }
-        .bp-claim-btn:disabled { background:#262b40; color:var(--muted); cursor:default; }
-
-        .nav { position:fixed; bottom:0; left:0; right:0; background:#131624; border-top:1px solid rgba(167,139,250,0.28); display:grid; grid-template-columns:repeat(4,1fr); padding:8px 4px 12px; z-index:50; }
-        .nav-btn { background:none; border:none; color:var(--muted); display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:700; cursor:pointer; }
-        .nav-btn.active { color:var(--accent); }
-        .nav-icon { font-size:20px; }
-        .toast { position:fixed; top:14px; left:50%; transform:translateX(-50%); background:#1e293b; color:#fff; padding:10px 18px; border-radius:12px; font-size:13px; font-weight:700; border:1px solid var(--accent); z-index:100; display:none; text-align:center; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WestyLoot — Кейсы CS2 и Stars</title>
+<script src="https://telegram.org"></script>
+<style>
+  :root { --bg: #0f1115; --card: #181b22; --card-light: #222631; --accent: #f59e0b; --green: #10b981; --blue: #3b82f6; --text: #f3f4f6; --muted: #9ca3af; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 76px; user-select: none; }
+  .header { position: sticky; top: 0; z-index: 50; background: rgba(15,17,21,0.94); backdrop-filter: blur(8px); padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #262a36; gap: 6px; }
+  .bal-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .bal-pill { background: var(--card-light); padding: 5px 9px; border-radius: 10px; font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 4px; border: 1px solid #2e3342; }
+  .live-feed { display: flex; gap: 6px; overflow-x: auto; padding: 8px 12px; background: #13161c; border-bottom: 1px solid #1f232e; scrollbar-width: none; }
+  .live-chip { background: var(--card); border: 1px solid #2a2f3d; border-radius: 8px; padding: 4px 8px; font-size: 11px; white-space: nowrap; }
+  .live-chip.rare { border-color: #ef4444; color: #fca5a5; }
+  .live-chip.pink { border-color: #ec4899; color: #f9a8d4; }
+  .container { padding: 12px; max-width: 480px; margin: 0 auto; }
+  .tab-content { display: none; } .tab-content.active { display: block; }
+  .card { background: var(--card); border: 1px solid #262b38; border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+  .roulette-wrap { position: relative; overflow: hidden; height: 96px; background: #101217; border-radius: 12px; border: 1px solid #2d3343; margin: 10px 0; }
+  .roulette-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--accent); z-index: 5; box-shadow: 0 0 8px var(--accent); }
+  .roulette-track { display: flex; align-items: center; height: 100%; will-change: transform; }
+  .r-item { min-width: 90px; height: 82px; margin: 0 2px; background: var(--card-light); border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 10px; font-weight: 600; padding: 4px; border-bottom: 3px solid #4b5563; }
+  .r-item.gold { border-bottom-color: var(--accent); background: #262012; }
+  .r-item.red { border-bottom-color: #ef4444; background: #291518; }
+  .btn { width: 100%; border: none; border-radius: 12px; padding: 12px; font-weight: 700; font-size: 14px; color: #fff; background: linear-gradient(135deg, #f59e0b, #d97706); cursor: pointer; margin-top: 8px; }
+  .btn:active { transform: scale(0.98); } .btn-green { background: linear-gradient(135deg, #10b981, #059669); } .btn-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); } .btn-dark { background: var(--card-light); border: 1px solid #323848; } .btn-sm { padding: 8px 10px; font-size: 12px; }
+  .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .shop-item { background: var(--card-light); border: 1px solid #2e3444; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; gap: 8px; }
+  .shop-item-icon { font-size: 26px; } .shop-item-name { font-weight: 700; font-size: 13px; } .shop-item-sub { font-size: 11px; color: var(--muted); }
+  .nav { position: fixed; bottom: 0; left: 0; right: 0; background: #14171f; border-top: 1px solid #262b38; display: flex; justify-content: space-around; padding: 6px 0; z-index: 60; }
+  .nav-btn { background: none; border: none; color: var(--muted); font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+  .nav-btn.active { color: var(--accent); font-weight: 700; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  .modal-box { background: var(--card); border: 1px solid #323848; border-radius: 18px; padding: 18px; width: 100%; max-width: 360px; text-align: center; }
+  #toast { display: none; position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; border: 1px solid var(--accent); padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; z-index: 200; white-space: nowrap; }
+</style>
 </head>
 <body>
-    <div id="toast" class="toast"></div>
-    <div id="winModal" class="modal-overlay">
-        <div class="modal-box">
-            <div style="font-size:11px;color:var(--purple);font-weight:800;">🎉 НОВЫЙ ПРЕДМЕТ!</div>
-            <div class="modal-icon" id="modalIcon">🔫</div>
-            <div class="modal-title" id="modalTitle">AK-47 | Slate</div>
-            <div class="modal-sub" id="modalPrice">$2.50</div>
-            <button class="btn btn-green" style="margin-bottom:8px;" onclick="closeWinModal(false)">🎒 Забрать в инвентарь</button>
-            <button class="btn btn-dark" style="margin:0;" id="modalSellBtn" onclick="closeWinModal(true)">💰 Продать</button>
-        </div>
-    </div>
-    <div class="live-bar"><div class="live-dot"></div><div class="live-feed" id="liveFeed"></div></div>
-    <div class="header">
-        <div class="stat"><span class="stat-label">Монеты</span><span class="stat-val" id="coins">0</span></div>
-        <div class="stat"><span class="stat-label">Ключи</span><span class="stat-val" id="keys">0</span></div>
-        <div class="stat"><span class="stat-label">Stars</span><span class="stat-val stars" id="stars">0 ⭐</span></div>
-    </div>
-    <div id="tab-home" class="tab-content active">
-        <div class="card">
-            <div class="card-title"><span>🤖 Майнер монет</span><span class="badge">8 500 = 1 🔑</span></div>
-            <div class="click-area"><div class="coin-btn" id="coinVisual" onclick="tapCoin()">🪙</div></div>
-            <button class="btn btn-dark" onclick="exchangeKey()">Обменять 8 500 монет на 1 🔑</button>
-            <button class="btn btn-green" onclick="watchAd()">🎬 Смотреть рекламу (+1–2 🔑)</button>
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(167,139,250,0.2);">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-                    <span style="font-weight:800;color:var(--purple);">⚙️ Автокликер</span>
-                    <span id="acStatus" style="color:var(--muted);font-weight:700;">Не активен</span>
-                </div>
-                <button class="btn btn-purple" style="margin:0 0 6px 0;padding:11px;font-size:13px;" id="acFreeBtn" onclick="stepFreeAutoClicker()">
-                    🎬 Автокликер (2 кл/с на 1ч): 0 / 5 реклам
-                </button>
-                <button class="btn btn-star" style="margin:0;padding:11px;font-size:13px;" onclick="buyVipAutoClicker()">
-                    ⚡ VIP Автокликер (5 кл/с на 5ч) — 100 ⭐
-                </button>
-            </div>
-        </div>
+<div id="toast"></div>
 
-        <div class="card">
-            <div class="card-title"><span>👥 Пригласи друзей</span><span class="badge purple" id="refCount">0 друзей</span></div>
-            <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Получай <b style="color:#fff;">+5 🔑</b> за каждого друга и <b style="color:var(--star);">10%</b> от его покупок!</p>
-            <div class="input-row">
-                <input type="text" id="refLinkInput" class="text-input" readonly value="https://t.me">
-                <button class="btn btn-purple btn-sm" style="margin:0;" onclick="copyRefLink()">Копия</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><span>🎁 Розыгрыши Telegram Stars</span></div>
-            <div style="font-size:12px;color:var(--muted);">Недельный (100 ⭐): <b id="adsWeek" style="color:#fff">0</b> / 50 реклам</div>
-            <div class="prog-bg"><div class="prog-fill" id="barWeek"></div></div>
-            <div style="font-size:12px;color:var(--muted);">Месячный (1 000 ⭐): <b id="adsMonth" style="color:#fff">0</b> / 250 реклам</div>
-            <div class="prog-bg"><div class="prog-fill" id="barMonth" style="background:var(--accent);"></div></div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><span>🎟 Промокод</span></div>
-            <div class="input-row">
-                <input type="text" id="promoCode" class="text-input" style="text-transform:uppercase;" placeholder="Введите промокод...">
-                <button class="btn btn-sm" onclick="usePromo()">ОК</button>
-            </div>
-        </div>
-    </div>
-    <div id="tab-shop" class="tab-content">
-        <div class="card">
-            <div class="card-title"><span id="activeCaseTitle">🪙 Кейс «Медный»</span><span class="badge" id="activeCasePrice">15 000 🪙</span></div>
-            <div class="roulette-wrap"><div class="roulette-line"></div><div class="roulette-track" id="track"></div></div>
-            <div class="spin-row">
-                <button class="btn" onclick="spinSelectedCase(false)">🎰 Крутить</button>
-                <button class="btn btn-purple" style="margin:0;" onclick="spinSelectedCase(true)">⚡ Фаст</button>
-            </div>
-            <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:6px;">📋 Содержимое кейса:</div>
-            <div class="contents-grid" id="caseContents"></div>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>🪙 Кейсы за монеты</span></div>
-            <div class="shop-grid">
-                <div class="shop-item"><div><div class="shop-item-icon">🥉</div><div class="shop-item-name">Медный</div><div class="shop-item-sub">Скин до $0.10</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_15k')">15 000 🪙</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🥈</div><div class="shop-item-name">Серебряный</div><div class="shop-item-sub">Скин до $0.25</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_50k')">50 000 🪙</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🥇</div><div class="shop-item-name">Золотой</div><div class="shop-item-sub">Скин до $0.50</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_100k')">100 000 🪙</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Платиновый</div><div class="shop-item-sub">Скин до $0.80</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_150k')">150 000 🪙</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">💎</div><div class="shop-item-name">Алмазный</div><div class="shop-item-sub">Скин до $1.20</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_200k')">200 000 🪙</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🔮</div><div class="shop-item-name">Мифический</div><div class="shop-item-sub">Скин до $2.00</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_350k')">350 000 🪙</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">👑</div><div class="shop-item-name">Императорский</div><div class="shop-item-sub">Скин до $3.50</div></div><button class="btn btn-dark btn-sm" style="width:100%;margin:0;" onclick="selectCase('coin_500k')">500 000 🪙</button></div>
-           <div class="shop-item" style="border: 1.5px solid var(--accent); background: linear-gradient(180deg, #2b210a, var(--card-light));">
-  <div>
-    <div class="shop-item-icon">👑</div>
-    <div class="shop-item-name" style="color: var(--accent);">Гарант-кейс</div>
-    <div class="shop-item-sub">100% скин $1.5–$25</div>
+<div class="header">
+  <div class="bal-group">
+    <div class="bal-pill">🪙 <span id="balCoins">0</span></div>
+    <div class="bal-pill">🔑 <span id="balKeys">0</span></div>
+    <div class="bal-pill">⭐ <span id="balStars">0</span></div>
   </div>
-  <button class="btn btn-sm" style="width:100%;margin:0;" onclick="selectCase('guarant_300k')">300К 🪙 + 65 🔑</button>
+  <button onclick="openLeaderboard()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;padding:6px 10px;font-weight:700;font-size:12px;cursor:pointer;">🏆 Топ-10</button>
 </div>
 
+<div class="live-feed" id="liveFeed" data-empty="1">
+  <div class="live-chip">🔥 Открывай кейсы и выбивай скины CS2!</div>
+</div>
 
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>💎 Кейсы за ключи и Stars</span></div>
-            <div class="shop-grid">
-                <div class="shop-item"><div><div class="shop-item-icon">📦</div><div class="shop-item-name">Новичок</div><div class="shop-item-sub">Ключи или P250 ($0.25)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_25')">25 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🎒</div><div class="shop-item-name">Базовый</div><div class="shop-item-sub">Ключи или Glock ($0.50)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_50')">50 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🎖️</div><div class="shop-item-name">Армейский</div><div class="shop-item-sub">Ключи или USP-S ($1)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_75')">75 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🔫</div><div class="shop-item-name">Запрещённый</div><div class="shop-item-sub">Ключи или AK-47 ($2.5)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_100')">100 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🔮</div><div class="shop-item-name">Засекреченный</div><div class="shop-item-sub">Ключи или M4A1-S ($4)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_150')">150 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🔥</div><div class="shop-item-name">Тайный</div><div class="shop-item-sub">Ключи или AWP ($6)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_200')">200 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">👑</div><div class="shop-item-name">Легендарный</div><div class="shop-item-sub">Ключи или Deagle ($15)</div></div><button class="btn btn-sm" style="width:100%" onclick="selectCase('free_300')">300 🔑</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Стартовый</div><div class="shop-item-sub">Скины $0.20 – $5.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_start')">50 ⭐</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">⚡</div><div class="shop-item-name">Элитный</div><div class="shop-item-sub">Скины $0.60 – $15.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_elite')">150 ⭐</button></div>
-                <div class="shop-item"><div><div class="shop-item-icon">🗡️</div><div class="shop-item-name">Ножевой</div><div class="shop-item-sub">Скины до $100.00</div></div><button class="btn btn-star btn-sm" style="width:100%" onclick="selectCase('donate_knife')">500 ⭐</button></div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>🔑 Купить ключи за Stars</span></div>
-            <div class="shop-grid">
-                <div class="shop-item"><div class="shop-item-name">10 ключей</div><div class="shop-item-sub">Базовый набор</div><button class="btn btn-star btn-sm" style="width:100%" onclick="buyKeysPack(10, 15)">15 ⭐</button></div>
-                <div class="shop-item"><div class="shop-item-name">55 ключей</div><div class="shop-item-sub">+5 в подарок</div><button class="btn btn-star btn-sm" style="width:100%" onclick="buyKeysPack(55, 75)">75 ⭐</button></div>
-            </div>
-        </div>
-    </div>
-    <div id="tab-bp" class="tab-content">
-        <div class="card">
-            <div class="card-title"><span>🎡 Колесо Фортуны</span><span class="badge">1 раз в 24ч</span></div>
-            <div class="wheel-container">
-                <div class="wheel-pointer"></div>
-                <div class="wheel-disc" id="wheelDisc">
-                    <div class="w-label" style="transform: rotate(30deg) translateX(-50%);">5 🔑</div>
-                    <div class="w-label" style="transform: rotate(90deg) translateX(-50%);">10 🔑</div>
-                    <div class="w-label" style="transform: rotate(150deg) translateX(-50%);">5 🔑</div>
-                    <div class="w-label" style="transform: rotate(210deg) translateX(-50%);">25 🔑</div>
-                    <div class="w-label" style="transform: rotate(270deg) translateX(-50%);">15 🔑</div>
-                    <div class="w-label" style="transform: rotate(330deg) translateX(-50%); color:#fde047;">СКИН $5</div>
-                </div>
-                <div class="wheel-center">🎯</div>
-            </div>
-            <button class="btn btn-green" id="dailyBtn" onclick="spinDailyWheel()">🎬 Крутить за 1 рекламу</button>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>🏆 Season 1: Westy Pass</span><span class="badge star" id="bpStatus">FREE</span></div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;">
-                <span>Уровень: <b id="bpLvl" style="color:var(--accent)">1</b> / 100</span>
-                <span>Кейсы: <b id="bpCases" style="color:#fff">0</b>/200 | Реклама: <b id="bpAds" style="color:#fff">0</b>/50</span>
-            </div>
-            <div class="prog-bg"><div class="prog-fill" id="barBpCases"></div></div>
-            <div class="bp-track" id="bpTrack"></div>
-            <button class="btn btn-star" style="margin-top:10px;" id="buyBpBtn" onclick="buyPremiumBP()">👑 Разблокировать GOLD PASS (350 ⭐)</button>
-        </div>
+<div class="container">
+  <!-- ВКЛАДКА 1: КЕЙСЫ И РУЛЕТКА -->
+  <div id="tab-cases" class="tab-content active">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <b id="selectedCaseTitle" style="font-size:15px;">🥉 Кейс «Медный»</b>
+        <span id="selectedCaseCost" style="font-size:12px;color:var(--accent);font-weight:700;">15 000 🪙</span>
+      </div>
+      <div class="roulette-wrap">
+        <div class="roulette-line"></div>
+        <div class="roulette-track" id="track"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" style="flex:2;" onclick="spinSelectedCase(false)">🎰 Открыть кейс</button>
+        <button class="btn btn-dark" style="flex:1;" onclick="spinSelectedCase(true)">⚡ Быстро</button>
+      </div>
+      <div id="caseDropsList" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;"></div>
     </div>
 
-    <div id="tab-inv" class="tab-content">
-        <div class="card">
-            <div class="card-title"><span>🔗 Твоя Steam Trade URL</span></div>
-            <div class="input-row">
-                <input type="text" id="tradeUrl" class="text-input" placeholder="https://steamcommunity.com...">
-                <button class="btn btn-sm" onclick="saveTradeUrl()">Сохранить</button>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-title"><span>🎒 Выбитые скины</span><span class="badge" id="invCount">0 шт.</span></div>
-            <div id="invList"><p style="font-size:13px;color:var(--muted);text-align:center;padding:16px 0;">Пока пусто. Открывай кейсы в Магазине!</p></div>
-        </div>
+    <h4 style="margin:10px 0 8px;font-size:13px;color:var(--muted);">🪙 Кейсы за монеты и Гарант</h4>
+    <div class="shop-grid">
+      <div class="shop-item"><div><div class="shop-item-icon">🥉</div><div class="shop-item-name">Медный</div><div class="shop-item-sub">до $0.90</div></div><button class="btn btn-sm" style="margin:0;" onclick="selectCase('coin_15k')">15 000 🪙</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🥈</div><div class="shop-item-name">Серебряный</div><div class="shop-item-sub">до $1.80</div></div><button class="btn btn-sm" style="margin:0;" onclick="selectCase('coin_50k')">50 000 🪙</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🥇</div><div class="shop-item-name">Золотой</div><div class="shop-item-sub">до $3.50</div></div><button class="btn btn-sm" style="margin:0;" onclick="selectCase('coin_100k')">100 000 🪙</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Платиновый</div><div class="shop-item-sub">до $4.50</div></div><button class="btn btn-sm" style="margin:0;" onclick="selectCase('coin_150k')">150 000 🪙</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">💎</div><div class="shop-item-name">Алмазный</div><div class="shop-item-sub">до $7.00</div></div><button class="btn btn-sm" style="margin:0;" onclick="selectCase('coin_200k')">200 000 🪙</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🔮</div><div class="shop-item-name">Мифический</div><div class="shop-item-sub">до $12.00</div></div><button class="btn btn-sm" style="margin:0;" onclick="selectCase('coin_350k')">350 000 🪙</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">👑</div><div class="shop-item-name">Императорский</div><div class="shop-item-sub">до $25.00</div></div><button class="btn btn-sm" style="margin:0;" onclick="selectCase('coin_500k')">500 000 🪙</button></div>
+      <div class="shop-item" style="border:1.5px solid var(--accent);background:linear-gradient(180deg,#2b210a,var(--card-light));"><div><div class="shop-item-icon">🔥</div><div class="shop-item-name" style="color:var(--accent);">Гарант-кейс</div><div class="shop-item-sub">100% скин $1.5–$25</div></div><button class="btn btn-sm" style="margin:0;" onclick="selectCase('guarant_300k')">300К 🪙 + 65 🔑</button></div>
     </div>
-
-    <nav class="nav">
-        <button class="nav-btn active" onclick="switchTab('home', this)"><span class="nav-icon">🏠</span><span>Главная</span></button>
-        <button class="nav-btn" onclick="switchTab('shop', this)"><span class="nav-icon">🛒</span><span>Магазин</span></button>
-        <button class="nav-btn" onclick="switchTab('bp', this)"><span class="nav-icon">🏆</span><span>БП и Колесо</span></button>
-        <button class="nav-btn" onclick="switchTab('inv', this)"><span class="nav-icon">🎒</span><span>Инвентарь</span></button>
-    </nav>
-
-    <script src="app.js?v=72"></script>
-    <!-- Кнопка Лидерборда Топ-10 -->
-<button id="lbBtn" onclick="openLeaderboard()" style="position:fixed; top:14px; right:14px; z-index:9998; background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; border:none; border-radius:12px; padding:8px 12px; font-weight:700; font-size:13px; box-shadow:0 4px 12px rgba(0,0,0,0.4); cursor:pointer;">
-  🏆 Топ-10
-</button>
-
-<!-- Модальное окно ленты Лидерборда -->
-<div id="lbModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.82); z-index:9999; align-items:center; justify-content:center; padding:16px;">
-  <div style="background:#18181b; border:1px solid #3f3f46; border-radius:20px; width:100%; max-width:380px; padding:18px; color:#fff; font-family:sans-serif;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h3 style="margin:0; font-size:18px;">🏆 Топ-10 по рекламе</h3>
-      <button onclick="document.getElementById('lbModal').style.display='none'" style="background:#27272a; color:#fff; border:none; border-radius:8px; padding:4px 10px; font-size:16px;">✕</button>
+    <h4 style="margin:14px 0 8px;font-size:13px;color:var(--muted);">🔑 Кейсы за ключи и ⭐ Stars</h4>
+    <div class="shop-grid">
+      <div class="shop-item"><div><div class="shop-item-icon">📦</div><div class="shop-item-name">Новичок</div><div class="shop-item-sub">до $1.60</div></div><button class="btn btn-blue btn-sm" style="margin:0;" onclick="selectCase('free_25')">25 🔑</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🎒</div><div class="shop-item-name">Базовый</div><div class="shop-item-sub">до $3.00</div></div><button class="btn btn-blue btn-sm" style="margin:0;" onclick="selectCase('free_50')">50 🔑</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🎖️</div><div class="shop-item-name">Армейский</div><div class="shop-item-sub">до $5.00</div></div><button class="btn btn-blue btn-sm" style="margin:0;" onclick="selectCase('free_75')">75 🔑</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🔫</div><div class="shop-item-name">Запрещённый</div><div class="shop-item-sub">до $11.00</div></div><button class="btn btn-blue btn-sm" style="margin:0;" onclick="selectCase('free_100')">100 🔑</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🔮</div><div class="shop-item-name">Засекреченный</div><div class="shop-item-sub">до $22.00</div></div><button class="btn btn-blue btn-sm" style="margin:0;" onclick="selectCase('free_150')">150 🔑</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🔥</div><div class="shop-item-name">Тайный</div><div class="shop-item-sub">до $28.00</div></div><button class="btn btn-blue btn-sm" style="margin:0;" onclick="selectCase('free_200')">200 🔑</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">👑</div><div class="shop-item-name">Легендарный</div><div class="shop-item-sub">Ножи до $100</div></div><button class="btn btn-blue btn-sm" style="margin:0;" onclick="selectCase('free_300')">300 🔑</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">💠</div><div class="shop-item-name">Стартовый</div><div class="shop-item-sub">до $5.00</div></div><button class="btn btn-green btn-sm" style="margin:0;" onclick="selectCase('donate_start')">50 ⭐</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">⚡</div><div class="shop-item-name">Элитный</div><div class="shop-item-sub">до $15.00</div></div><button class="btn btn-green btn-sm" style="margin:0;" onclick="selectCase('donate_elite')">150 ⭐</button></div>
+      <div class="shop-item"><div><div class="shop-item-icon">🗡️</div><div class="shop-item-name">Ножевой</div><div class="shop-item-sub">Нож $100</div></div><button class="btn btn-green btn-sm" style="margin:0;" onclick="selectCase('donate_knife')">500 ⭐</button></div>
     </div>
-    <div id="lbList" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
-      <div style="text-align:center; color:#a1a1aa; padding:20px;">Загрузка...</div>
+  </div>
+
+  <!-- ВКЛАДКА 2: ФАРМ И РЕКЛАМА -->
+  <div id="tab-earn" class="tab-content">
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:16px;">⚡ Автокликер (2 🪙/сек)</h3>
+      <div id="acStatusText" style="font-size:12px;color:var(--muted);">Не активен — посмотри 5 реклам для запуска на 1 час</div>
+      <button id="acWatchBtn" class="btn btn-green" onclick="watchAdForAutoclicker()">🎬 Автокликер (2 кл/с на 1ч): 0 / 5 реклам</button>
     </div>
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:16px;">🔑 Ключи и Колесо Фортуны</h3>
+      <button class="btn btn-blue" onclick="watchAdForKey()">🎬 Смотреть рекламу (+1 🔑)</button>
+      <button id="dailySpinBtn" class="btn" onclick="spinDailyWheel()">🎡 Колесо Фортуны (раз в 24ч)</button>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКА 3: РЕФЕРАЛЫ И ПРОМОКОДЫ -->
+  <div id="tab-tasks" class="tab-content">
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:16px;">👥 Пригласи друзей (+5 🔑 за друга)</h3>
+      <input id="refLinkInput" readonly style="width:100%;padding:9px;border-radius:10px;border:1px solid #323848;background:#101217;color:#fff;font-size:12px;margin-top:6px;">
+      <button class="btn btn-blue btn-sm" onclick="copyRefLink()">📋 Скопировать ссылку</button>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:16px;">🎁 Промокод</h3>
+      <input id="promoInput" placeholder="Введи промокод..." style="width:100%;padding:9px;border-radius:10px;border:1px solid #323848;background:#101217;color:#fff;font-size:13px;">
+      <button class="btn btn-green btn-sm" onclick="usePromo()">Активировать</button>
+    </div>
+  </div>
+  <!-- ВКЛАДКА 4: ИНВЕНТАРЬ И ВЫВОД -->
+  <div id="tab-inv" class="tab-content">
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:15px;">🔗 Steam Trade URL (для вывода скинов)</h3>
+      <input id="tradeUrlInput" placeholder="https://steamcommunity.com..." style="width:100%;padding:9px;border-radius:10px;border:1px solid #323848;background:#101217;color:#fff;font-size:12px;">
+      <button class="btn btn-dark btn-sm" onclick="saveTradeUrl()">💾 Сохранить Trade URL</button>
+    </div>
+    <div id="invList"></div>
   </div>
 </div>
 
+<!-- НИЖНЯЯ НАВИГАЦИЯ -->
+<div class="nav">
+  <button class="nav-btn active" onclick="switchTab('cases', this)"><span>🎰</span>Кейсы</button>
+  <button class="nav-btn" onclick="switchTab('earn', this)"><span>⚡</span>Фарм</button>
+  <button class="nav-btn" onclick="switchTab('tasks', this)"><span>👥</span>Друзья</button>
+  <button class="nav-btn" onclick="switchTab('inv', this)"><span>🎒</span>Инвентарь</button>
+</div>
+
+<!-- МОДАЛКА ВЫИГРЫША -->
+<div id="winModal" class="modal">
+  <div class="modal-box">
+    <div id="modalIcon" style="font-size:44px;">🔫</div>
+    <h3 id="modalTitle" style="margin:8px 0 4px;">Скин</h3>
+    <div id="modalPrice" style="color:var(--accent);font-weight:700;margin-bottom:12px;">$0.00</div>
+    <button class="btn btn-green" onclick="closeWinModal(true)">🎒 Забрать в инвентарь</button>
+    <button id="modalSellBtn" class="btn btn-blue" onclick="closeWinModal(false)">💰 Продать</button>
+  </div>
+</div>
+
+<!-- МОДАЛКА ЛИДЕРБОРДА ТОП-10 -->
+<div id="lbModal" class="modal">
+  <div class="modal-box" style="text-align:left;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h3 style="margin:0;font-size:16px;">🏆 Топ-10 по рекламе</h3>
+      <button onclick="document.getElementById('lbModal').style.display='none'" style="background:#27272a;color:#fff;border:none;border-radius:8px;padding:4px 10px;">✕</button>
+    </div>
+    <div id="lbList" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+</div>
+
+<script src="app.js?v=75"></script>
 <script>
-(function() {
-  const WORKER_URL = "https://" + "westyloot.l8153766" + ".workers.dev";
-  const tg = window.Telegram && window.Telegram.WebApp;
-  const initData = tg ? tg.initData : "";
-  const tgUser = tg && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
-
-  // Загрузка прогресса с сервера при старте
-  if (initData) {
-    fetch(WORKER_URL + "/api/secure_load", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData })
-    })
-    .then(r => r.ok ? r.json() : null)
-    .then(serverState => {
-      if (serverState && typeof state === "object") {
-        Object.assign(state, serverState);
-        if (typeof updateUI === "function") updateUI();
-      }
-    }).catch(() => {});
-  }
-
-  // Автосохранение прогресса на сервер каждые 8 секунд
-  setInterval(() => {
-    if (!initData || typeof state !== "object") return;
-    const payload = {
-      ...state,
-      userName: tgUser ? (tgUser.first_name || tgUser.username || "Игрок") : "Игрок"
-    };
-    fetch(WORKER_URL + "/api/secure_save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData, state: payload })
-    }).catch(() => {});
-  }, 8000);
-
-  // Открытие ленты Топ-10
-  window.openLeaderboard = async function() {
-    const modal = document.getElementById("lbModal");
-    const list = document.getElementById("lbList");
-    modal.style.display = "flex";
-    list.innerHTML = '<div style="text-align:center; color:#a1a1aa; padding:20px;">Загрузка рейтинга...</div>';
-    try {
-      const res = await fetch(WORKER_URL + "/api/leaderboard");
-      const data = await res.json();
-      const top = data.top || [];
-      if (!top.length) {
-        list.innerHTML = '<div style="text-align:center; color:#a1a1aa; padding:20px;">Пока никого нет — стань первым!</div>';
-        return;
-      }
-      list.innerHTML = top.map((p, i) => `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:#27272a; padding:10px 12px; border-radius:12px;">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-weight:800; color:${i === 0 ? '#facc15' : i === 1 ? '#e4e4e7' : i === 2 ? '#d97706' : '#71717a'};">#${i + 1}</span>
-            <span style="font-weight:600;">${p.name}</span>
-          </div>
-          <span style="background:#3f3f46; padding:4px 8px; border-radius:8px; font-size:12px; font-weight:700;">🎬 ${p.ads}</span>
-        </div>
-      `).join("");
-    } catch (e) {
-      list.innerHTML = '<div style="text-align:center; color:#f87171; padding:20px;">Ошибка загрузки</div>';
-    }
-  };
-})();
+async function openLeaderboard() {
+  const modal = document.getElementById('lbModal'), list = document.getElementById('lbList');
+  modal.style.display = 'flex';
+  list.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:16px;">Загрузка...</div>';
+  try {
+    const res = await fetch(API_BASE + '/leaderboard');
+    const data = await res.json();
+    const top = data.top || [];
+    list.innerHTML = top.length ? top.map((p, i) => `<div style="display:flex;justify-content:space-between;background:#222631;padding:8px 10px;border-radius:10px;font-size:13px;"><b>#${i+1} ${p.name}</b><span>🎬 ${p.ads}</span></div>`).join('') : '<div style="text-align:center;color:#9ca3af;padding:16px;">Пока пусто — стань первым!</div>';
+  } catch { list.innerHTML = '<div style="text-align:center;color:#f87171;padding:16px;">Ошибка загрузки</div>'; }
+}
 </script>
-
 </body>
 </html>
